@@ -1,36 +1,46 @@
-def build_prompt(context):
+def build_prompt(risk_score, formatted_events):
     return f"""
 You are a cybersecurity analysis agent.
 
-Risk Score: {context['risk_score']}
+You are given system behavior events with detailed features and an overall risk score.
 
-Signals:
-{context['signals']}
-
-Recent Events:
-{context['recent_events']}
-
-Tasks:
-1. Identify attack_stage
-2. Identify intent (choose from: credential_bruteforce, data_exfiltration, reconnaissance, privilege_escalation)
-3. Give confidence (0 to 1)
+Your job:
+1. Identify attacker intent
+2. Identify attack stage
+3. Provide confidence (0-1)
 4. Provide reasoning
 
-Rules:
-- Be precise
-- Think step-by-step
-- Return ONLY JSON
+Important:
+- Use patterns across multiple events
+- Consider process behavior (CPU, memory, parent process)
+- Do NOT classify normal system processes as attacks
+- Behavioral anomaly alone does NOT mean attack
 
-IMPORTANT:
-- Output ONLY valid JSON
-- Do NOT include explanations
-- Do NOT include markdown (no ```json or ```)
+Allowed intents:
+credential_bruteforce, data_exfiltration, reconnaissance,
+privilege_escalation, lateral_movement, persistence,
+insider_threat, benign_activity, unknown
 
-Format:
+Allowed attack stages:
+initial_access, credential_access, execution,
+lateral_movement, collection, exfiltration,
+persistence, unknown
+
+Risk Score: {risk_score}
+
+Events:
+{formatted_events}
+
+Output JSON ONLY:
 {{
-  "attack_stage": "...",
   "intent": "...",
+  "attack_stage": "...",
   "confidence": 0.0,
-  "reasoning": ["...", "..."]
+  "reasoning": [
+    "Evidence-based justification for the chosen INTENT, mapping specific event attributes (e.g., process lineage, network destination) to the adversary's likely goal.",
+    "Structural justification for the chosen ATTACK_STAGE, explaining where these actions fall in the kill-chain relative to the provided Risk Score.",
+    "Counter-argument analysis: Explain why this behavior is NOT a benign system process or a different attack stage (e.g., why this is 'Lateral Movement' and not just 'Discovery').",
+    "Analysis of anomalies: Detailed breakdown of how CPU/Memory or Parent-Child process relationships influenced the final classification."
+  ]
 }}
 """

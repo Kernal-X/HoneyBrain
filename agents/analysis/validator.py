@@ -1,33 +1,40 @@
-ALLOWED_INTENTS = [
-    "credential_bruteforce",
-    "data_exfiltration",
-    "reconnaissance",
-    "privilege_escalation"
+INTENTS = [
+    "credential_bruteforce", "data_exfiltration", "reconnaissance",
+    "privilege_escalation", "lateral_movement", "persistence",
+    "insider_threat", "benign_activity", "unknown"
 ]
 
-def validate_output(output):
-    required_keys = ["attack_stage", "intent", "confidence", "reasoning"]
-
-    for key in required_keys:
-        if key not in output:
-            return False
-
-    if not isinstance(output["confidence"], (int, float)):
-        return False
-
-    if not isinstance(output["reasoning"], list):
-        return False
-
-    return True
+STAGES = [
+    "initial_access", "credential_access", "execution",
+    "lateral_movement", "collection", "exfiltration",
+    "persistence", "unknown"
+]
 
 
-def sanitize_intent(intent):
-    return intent if intent in ALLOWED_INTENTS else "unknown"
+def sanitize_output(output):
+    intent = output.get("intent", "unknown")
+    stage = output.get("attack_stage", "unknown")
 
+    if intent not in INTENTS:
+        intent = "unknown"
 
-def clamp_confidence(conf):
+    if stage not in STAGES:
+        stage = "unknown"
+
     try:
-        conf = float(conf)
+        confidence = float(output.get("confidence", 0))
     except:
-        return 0.0
-    return max(0.0, min(1.0, conf))
+        confidence = 0.0
+
+    confidence = max(0.0, min(1.0, confidence))
+
+    reasoning = output.get("reasoning", [])
+    if not isinstance(reasoning, list):
+        reasoning = ["invalid reasoning"]
+
+    return {
+        "intent": intent,
+        "attack_stage": stage,
+        "confidence": confidence,
+        "reasoning": reasoning[:2]
+    }
