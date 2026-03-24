@@ -5,24 +5,21 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from agents.analysis.analysis_agent import analysis_agent
 
-
 state = {
-    "risk_score": 0.85,
+    "risk_score": 0.65,
     "events": [
-        {"type": "auth", "data": {"username": "guest", "status": "success", "source_ip": "192.168.1.7"}},
         {
             "type": "process",
             "data": {
-                "process_name": "cmd.exe",
+                "process_name": "unknown.exe",
                 "parent_process": "unknown",
-                "cpu_percent": 15,
-                "memory_mb": 50,
-                "reason": "elevated privilege attempt"
+                "cpu_percent": 95,
+                "memory_mb": 500,
+                "reason": "high resource usage"
             }
         }
     ]
 }
-
 
 
 
