@@ -25,6 +25,8 @@ class SOCLogger:
 
     def _emit_process_alert(self, event: Dict, detection: Dict) -> None:
         data = event.get("data", {})
+        ts = event.get("timestamp") or time.time()
+        ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
         pid = data.get("pid")
         process_name = data.get("process_name", "unknown")
         reasons = detection.get("reasons") or detection.get("rare_patterns") or ["behavioral anomaly"]
@@ -35,6 +37,7 @@ class SOCLogger:
             return
 
         print("[ALERT] Suspicious Process Detected")
+        print(f"Timestamp: {ts_str}")
         print(f"Process: {process_name}")
         print(f"PID: {pid}")
         print(f"Parent: {data.get('parent_process') or 'unknown'}")
@@ -46,6 +49,8 @@ class SOCLogger:
 
     def _emit_file_alert(self, event: Dict, detection: Dict) -> None:
         data = event.get("data", {})
+        ts = event.get("timestamp") or time.time()
+        ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
         file_path = data.get("file_path", "unknown")
         action = data.get("action", "unknown")
         reasons = detection.get("reasons") or ["suspicious file behavior"]
@@ -56,6 +61,7 @@ class SOCLogger:
             return
 
         print("[ALERT] Suspicious File Activity")
+        print(f"Timestamp: {ts_str}")
         print(f"File: {file_path}")
         print(f"Action: {action}")
         print(f"Score: {detection.get('score', 0)}")
@@ -64,6 +70,8 @@ class SOCLogger:
 
     def _emit_network_alert(self, event: Dict, detection: Dict) -> None:
         data = event.get("data", {})
+        ts = event.get("timestamp") or time.time()
+        ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts))
         process_name = data.get("process_name", "unknown")
         remote_ip = data.get("remote_ip", "")
         remote_port = data.get("remote_port", 0)
@@ -75,6 +83,7 @@ class SOCLogger:
             return
 
         print("[ALERT] Suspicious Network Activity")
+        print(f"Timestamp: {ts_str}")
         print(f"Process: {process_name}")
         print(f"Remote IP: {remote_ip or 'unknown'}")
         print(f"Port: {remote_port}")
