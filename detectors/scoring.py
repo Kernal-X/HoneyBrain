@@ -38,9 +38,6 @@ class ScoringDetector:
         self._high_copy_activity_threshold = 25
         self._recent_file_activity = deque()
         self._recent_created_files = deque()
-        self._recent_failed_logins = deque()
-        self._failed_login_window_seconds = 60
-        self._failed_login_threshold = 5
         self._trusted_network_processes = {
             "chrome.exe",
             "msedge.exe",
@@ -74,8 +71,6 @@ class ScoringDetector:
             return self._analyze_file_event(event)
         if event_type == "network_connection":
             return self._analyze_network_event(event)
-        if event_type == "login_attempt":
-            return self._analyze_login_event(event)
         return self._analyze_process_event(event)
 
     def _analyze_file_event(self, event: Dict) -> Dict:
@@ -181,40 +176,6 @@ class ScoringDetector:
         if remote_port and remote_port not in {80, 443}:
             score += 1
             reasons.append("Unusual port usage")
-
-        severity = "none"
-        if score >= self.alert_threshold:
-            severity = "alert"
-        elif score >= self.suspicious_threshold:
-            severity = "suspicious"
-
-        return {
-            "score": score,
-            "severity": severity,
-            "reasons": reasons,
-            "rare_patterns": [],
-        }
-
-    def _analyze_login_event(self, event: Dict) -> Dict:
-        data = event.get("data", {})
-        event_time = float(event.get("timestamp") or time.time())
-        status = str(data.get("status") or "").lower().strip()
-
-        score = 0
-        reasons: List[str] = []
-
-        if status == "failed":
-            score += 1
-            reasons.append("Failed login attempt")
-            self._recent_failed_logins.append(event_time)
-
-        cutoff = event_time - self._failed_login_window_seconds
-        while self._recent_failed_logins and self._recent_failed_logins[0] < cutoff:
-            self._recent_failed_logins.popleft()
-
-        if len(self._recent_failed_logins) >= self._failed_login_threshold:
-            score += 3
-            reasons.append("Multiple failed logins in short time")
 
         severity = "none"
         if score >= self.alert_threshold:

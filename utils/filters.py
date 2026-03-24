@@ -57,9 +57,6 @@ class EventFilter:
                 return True
             return self._is_local_ip(remote_ip)
 
-        if event_type == "login_attempt":
-            return False
-
         pid = int(data.get("pid") or -1)
         name = str(data.get("process_name") or "").strip().lower()
         if pid in self._ignored_pids:

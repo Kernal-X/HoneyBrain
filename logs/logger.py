@@ -21,10 +21,6 @@ class SOCLogger:
             self._emit_network_alert(event, detection)
             return
 
-        if event_type == "login_attempt":
-            self._emit_login_alert(event, detection)
-            return
-
         self._emit_process_alert(event, detection)
 
     def _emit_process_alert(self, event: Dict, detection: Dict) -> None:
@@ -82,26 +78,6 @@ class SOCLogger:
         print(f"Process: {process_name}")
         print(f"Remote IP: {remote_ip or 'unknown'}")
         print(f"Port: {remote_port}")
-        print(f"Score: {detection.get('score', 0)}")
-        print(f"Reason: {', '.join(reasons)}")
-        print("-" * 50)
-
-    def _emit_login_alert(self, event: Dict, detection: Dict) -> None:
-        data = event.get("data", {})
-        username = data.get("username", "unknown")
-        source_ip = data.get("source_ip", "")
-        status = data.get("status", "unknown")
-        reasons = detection.get("reasons") or ["suspicious login behavior"]
-        primary_reason = reasons[0]
-        key = f"login:{primary_reason}:{username}:{source_ip}:{status}"
-
-        if not self._check_rate_limit(key):
-            return
-
-        print("[ALERT] Suspicious Login Activity")
-        print(f"User: {username}")
-        print(f"Source IP: {source_ip or 'unknown'}")
-        print(f"Status: {status}")
         print(f"Score: {detection.get('score', 0)}")
         print(f"Reason: {', '.join(reasons)}")
         print("-" * 50)
