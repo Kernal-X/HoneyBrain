@@ -15,7 +15,7 @@ class Monitor:
         # collect from process
         events.extend(self.process_collector.collect())
 
-        # collect from file (currently empty)
+        # collect from file
         events.extend(self.file_collector.collect())
 
         return events

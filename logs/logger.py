@@ -12,18 +12,23 @@ class SOCLogger:
         if severity not in {"alert", "suspicious"}:
             return
 
+        event_type = event.get("type")
+        if event_type == "file_access":
+            self._emit_file_alert(event, detection)
+            return
+
+        self._emit_process_alert(event, detection)
+
+    def _emit_process_alert(self, event: Dict, detection: Dict) -> None:
         data = event.get("data", {})
         pid = data.get("pid")
         process_name = data.get("process_name", "unknown")
         reasons = detection.get("reasons") or detection.get("rare_patterns") or ["behavioral anomaly"]
         primary_reason = reasons[0]
-        key = f"{primary_reason}:{pid}"
+        key = f"process:{primary_reason}:{pid}"
 
-        now = time.time()
-        last = self._last_emit_by_key.get(key, 0)
-        if now - last < self.rate_limit_seconds:
+        if not self._check_rate_limit(key):
             return
-        self._last_emit_by_key[key] = now
 
         print("[ALERT] Suspicious Process Detected")
         print(f"Process: {process_name}")
@@ -34,3 +39,29 @@ class SOCLogger:
         print(f"Score: {detection.get('score', 0)}")
         print(f"Reason: {', '.join(reasons)}")
         print("-" * 50)
+
+    def _emit_file_alert(self, event: Dict, detection: Dict) -> None:
+        data = event.get("data", {})
+        file_path = data.get("file_path", "unknown")
+        action = data.get("action", "unknown")
+        reasons = detection.get("reasons") or ["suspicious file behavior"]
+        primary_reason = reasons[0]
+        key = f"file:{primary_reason}:{file_path}:{action}"
+
+        if not self._check_rate_limit(key):
+            return
+
+        print("[ALERT] Suspicious File Activity")
+        print(f"File: {file_path}")
+        print(f"Action: {action}")
+        print(f"Score: {detection.get('score', 0)}")
+        print(f"Reason: {', '.join(reasons)}")
+        print("-" * 50)
+
+    def _check_rate_limit(self, key: str) -> bool:
+        now = time.time()
+        last = self._last_emit_by_key.get(key, 0)
+        if now - last < self.rate_limit_seconds:
+            return False
+        self._last_emit_by_key[key] = now
+        return True
