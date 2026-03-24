@@ -1,0 +1,9 @@
+openai
+groq
+langchain
+langgraph
+pydantic
+numpy 
+pandas
+python-dotenv
+langchain_groq
