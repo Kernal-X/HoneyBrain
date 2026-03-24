@@ -1,5 +1,6 @@
 import re
 import time
+import ipaddress
 from collections import deque
 from typing import Dict, List
 
@@ -37,11 +38,44 @@ class ScoringDetector:
         self._high_copy_activity_threshold = 25
         self._recent_file_activity = deque()
         self._recent_created_files = deque()
+        self._recent_failed_logins = deque()
+        self._failed_login_window_seconds = 60
+        self._failed_login_threshold = 5
+        self._trusted_network_processes = {
+            "chrome.exe",
+            "msedge.exe",
+            "msedgewebview2.exe",
+            "explorer.exe",
+            "teams.exe",
+            "ms-teams.exe",
+            "onedrive.exe",
+            "googledrivefs.exe",
+            "cursor.exe",
+            "code.exe",
+        }
+        self._trusted_service_networks = {
+            # Google
+            ipaddress.ip_network("8.8.8.0/24"),
+            ipaddress.ip_network("8.34.208.0/20"),
+            ipaddress.ip_network("8.35.192.0/20"),
+            # Cloudflare
+            ipaddress.ip_network("1.1.1.0/24"),
+            ipaddress.ip_network("1.0.0.0/24"),
+            # Microsoft (commonly observed edge/service ranges)
+            ipaddress.ip_network("13.107.0.0/16"),
+            ipaddress.ip_network("40.64.0.0/10"),
+            # AWS (common service edge range)
+            ipaddress.ip_network("52.95.0.0/16"),
+        }
 
     def analyze(self, event: Dict) -> Dict:
         event_type = event.get("type")
         if event_type == "file_access":
             return self._analyze_file_event(event)
+        if event_type == "network_connection":
+            return self._analyze_network_event(event)
+        if event_type == "login_attempt":
+            return self._analyze_login_event(event)
         return self._analyze_process_event(event)
 
     def _analyze_file_event(self, event: Dict) -> Dict:
@@ -98,6 +132,102 @@ class ScoringDetector:
             self._recent_file_activity.popleft()
         while self._recent_created_files and self._recent_created_files[0] < cutoff:
             self._recent_created_files.popleft()
+
+    def _analyze_network_event(self, event: Dict) -> Dict:
+        data = event.get("data", {})
+        score = 0
+        reasons: List[str] = []
+
+        remote_ip = str(data.get("remote_ip") or "").strip()
+        process_name = str(data.get("process_name") or "").lower().strip()
+        remote_port = int(data.get("remote_port") or 0)
+
+        # Ignore local/private traffic quickly to reduce noise.
+        if self._is_local_or_private_ip(remote_ip):
+            return {
+                "score": 0,
+                "severity": "none",
+                "reasons": [],
+                "rare_patterns": [],
+            }
+
+        # Ignore normal outbound traffic from known user/system applications.
+        if process_name in self._trusted_network_processes:
+            return {
+                "score": 0,
+                "severity": "none",
+                "reasons": [],
+                "rare_patterns": [],
+            }
+
+        if self._is_trusted_service_ip(remote_ip):
+            return {
+                "score": 0,
+                "severity": "none",
+                "reasons": [],
+                "rare_patterns": [],
+            }
+
+        # External connection from an untrusted process is a weak signal by itself.
+        if remote_ip:
+            score += 1
+            reasons.append("External connection from unknown process")
+
+        # Hidden/missing process identity is stronger.
+        if process_name in {"", "unknown"}:
+            score += 2
+            reasons.append("Unknown process making network connection")
+
+        if remote_port and remote_port not in {80, 443}:
+            score += 1
+            reasons.append("Unusual port usage")
+
+        severity = "none"
+        if score >= self.alert_threshold:
+            severity = "alert"
+        elif score >= self.suspicious_threshold:
+            severity = "suspicious"
+
+        return {
+            "score": score,
+            "severity": severity,
+            "reasons": reasons,
+            "rare_patterns": [],
+        }
+
+    def _analyze_login_event(self, event: Dict) -> Dict:
+        data = event.get("data", {})
+        event_time = float(event.get("timestamp") or time.time())
+        status = str(data.get("status") or "").lower().strip()
+
+        score = 0
+        reasons: List[str] = []
+
+        if status == "failed":
+            score += 1
+            reasons.append("Failed login attempt")
+            self._recent_failed_logins.append(event_time)
+
+        cutoff = event_time - self._failed_login_window_seconds
+        while self._recent_failed_logins and self._recent_failed_logins[0] < cutoff:
+            self._recent_failed_logins.popleft()
+
+        if len(self._recent_failed_logins) >= self._failed_login_threshold:
+            score += 3
+            reasons.append("Multiple failed logins in short time")
+
+        severity = "none"
+        if score >= self.alert_threshold:
+            severity = "alert"
+        elif score >= self.suspicious_threshold:
+            severity = "suspicious"
+
+        return {
+            "score": score,
+            "severity": severity,
+            "reasons": reasons,
+            "rare_patterns": [],
+        }
 
     def _analyze_process_event(self, event: Dict) -> Dict:
         data = event.get("data", {})
@@ -165,3 +295,24 @@ class ScoringDetector:
             (parent_name in self._office_parents and process_name in self._script_children)
             or (parent_name in self._browser_parents and process_name in self._script_children)
         )
+
+    def _is_local_or_private_ip(self, ip_value: str) -> bool:
+        if not ip_value:
+            return True
+        ip_lower = ip_value.lower()
+        if ip_lower.startswith(("127.", "192.168.", "10.", "172.", "::1")):
+            return True
+        try:
+            ip = ipaddress.ip_address(ip_value)
+            return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast
+        except ValueError:
+            return True
+
+    def _is_trusted_service_ip(self, ip_value: str) -> bool:
+        if not ip_value:
+            return False
+        try:
+            ip = ipaddress.ip_address(ip_value)
+            return any(ip in network for network in self._trusted_service_networks)
+        except ValueError:
+            return False

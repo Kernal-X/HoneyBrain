@@ -17,6 +17,14 @@ class SOCLogger:
             self._emit_file_alert(event, detection)
             return
 
+        if event_type == "network_connection":
+            self._emit_network_alert(event, detection)
+            return
+
+        if event_type == "login_attempt":
+            self._emit_login_alert(event, detection)
+            return
+
         self._emit_process_alert(event, detection)
 
     def _emit_process_alert(self, event: Dict, detection: Dict) -> None:
@@ -54,6 +62,46 @@ class SOCLogger:
         print("[ALERT] Suspicious File Activity")
         print(f"File: {file_path}")
         print(f"Action: {action}")
+        print(f"Score: {detection.get('score', 0)}")
+        print(f"Reason: {', '.join(reasons)}")
+        print("-" * 50)
+
+    def _emit_network_alert(self, event: Dict, detection: Dict) -> None:
+        data = event.get("data", {})
+        process_name = data.get("process_name", "unknown")
+        remote_ip = data.get("remote_ip", "")
+        remote_port = data.get("remote_port", 0)
+        reasons = detection.get("reasons") or ["suspicious network behavior"]
+        primary_reason = reasons[0]
+        key = f"network:{primary_reason}:{process_name}:{remote_ip}:{remote_port}"
+
+        if not self._check_rate_limit(key):
+            return
+
+        print("[ALERT] Suspicious Network Activity")
+        print(f"Process: {process_name}")
+        print(f"Remote IP: {remote_ip or 'unknown'}")
+        print(f"Port: {remote_port}")
+        print(f"Score: {detection.get('score', 0)}")
+        print(f"Reason: {', '.join(reasons)}")
+        print("-" * 50)
+
+    def _emit_login_alert(self, event: Dict, detection: Dict) -> None:
+        data = event.get("data", {})
+        username = data.get("username", "unknown")
+        source_ip = data.get("source_ip", "")
+        status = data.get("status", "unknown")
+        reasons = detection.get("reasons") or ["suspicious login behavior"]
+        primary_reason = reasons[0]
+        key = f"login:{primary_reason}:{username}:{source_ip}:{status}"
+
+        if not self._check_rate_limit(key):
+            return
+
+        print("[ALERT] Suspicious Login Activity")
+        print(f"User: {username}")
+        print(f"Source IP: {source_ip or 'unknown'}")
+        print(f"Status: {status}")
         print(f"Score: {detection.get('score', 0)}")
         print(f"Reason: {', '.join(reasons)}")
         print("-" * 50)

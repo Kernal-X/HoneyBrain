@@ -8,3 +8,4 @@ pandas
 python-dotenv
 langchain_groq
 watchdog
+psutil
