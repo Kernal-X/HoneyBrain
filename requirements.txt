@@ -9,3 +9,10 @@ python-dotenv
 langchain_groq
 watchdog
 psutil
+scikit-learn
+xgboost
+matplotlib
+seaborn
+imbalanced-learn
+joblib
+numpy
