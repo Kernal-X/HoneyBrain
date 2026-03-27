@@ -5,19 +5,29 @@ import numpy as np
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    accuracy_score
+)
 
 # ---------------- PATHS ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.normpath(os.path.join(BASE_DIR, "../../data/processed/process_dataset.csv"))
+
+DATA_PATH = os.path.normpath(
+    os.path.join(BASE_DIR, "../../data/processed/process_dataset.csv")
+)
+
 MODEL_SAVE_PATH = os.path.join(BASE_DIR, "process_final_model.pkl")
 
 
 def train_process_model():
 
+    print("🚀 TRAINING PROCESS MODEL")
+
     # ---------------- LOAD ----------------
     df = pd.read_csv(DATA_PATH)
+    print("Loaded shape:", df.shape)
 
     # ---------------- REMOVE LEAKAGE ----------------
     df = df.drop(columns=[
@@ -39,48 +49,46 @@ def train_process_model():
 
     # ---------------- FEATURE ENGINEERING ----------------
 
-    # Core behavior
+    # Resource spike
     df['resource_spike'] = np.sqrt(
         df['cpu_zscore']**2 + df['memory_zscore']**2
     )
 
-    # Activity spike
+    # Activity burst
     df['burst_flag'] = (
         df['process_freq_5min'] > df['process_freq_5min'].median()
     ).astype(int)
 
-    # Behavior + trust interaction
+    # Behavior risk
     df['behavior_risk'] = df['resource_spike'] * (1 - df['is_known_binary'])
 
-    # Frequency + entropy (attack repetition)
+    # Frequency + entropy
     df['freq_entropy_combo'] = df['process_freq_5min'] * df['cmd_entropy']
 
-    # Stealth attack detection
+    # Stealth risk
     df['stealth_risk'] = (
         (df['is_known_binary'] == 0) &
         (df['resource_spike'] < df['resource_spike'].median())
     ).astype(int)
 
-    # Extreme anomaly detector
+    # Combined anomaly
     df['combined_anomaly'] = (
         (abs(df['cpu_zscore']) > 2).astype(int) +
         (abs(df['memory_zscore']) > 2).astype(int)
     )
 
-
-    # ---------------- FINAL FEATURE SET ----------------
+    # ---------------- FINAL FEATURES ----------------
     features = [
         'resource_spike',
         'process_freq_5min',
         'is_known_binary',
 
-        # 🔥 alignment features (critical)
+        # alignment features
         'unknown_process_flag',
-        
-    'external_connection_flag',
+        'external_connection_flag',
         'cmd_entropy',
 
-        # engineered features
+        # engineered
         'behavior_risk',
         'freq_entropy_combo',
         'stealth_risk',
@@ -89,7 +97,8 @@ def train_process_model():
 
     features = [f for f in features if f in df.columns]
 
-    print("✅ Features used:", features)
+    print("\n✅ Features used:")
+    print(features)
 
     X = df[features]
     y = df['label']
@@ -107,23 +116,22 @@ def train_process_model():
         n_estimators=500,
         max_depth=10,
         min_samples_leaf=4,
-        class_weight={0:1, 1:2},
+        class_weight={0: 1, 1: 2},
         random_state=42,
         n_jobs=-1
     )
 
+    print("\n🤖 Training model...")
     model.fit(X_train, y_train)
 
     # ---------------- PREDICTION ----------------
     probs = model.predict_proba(X_test)[:, 1]
-
-    # Slightly recall-focused threshold
     y_pred = (probs > 0.30).astype(int)
 
     # ---------------- METRICS ----------------
-    print("\n" + "="*40)
-    print("      🚀 FINAL PROCESS MODEL")
-    print("="*40)
+    print("\n" + "=" * 40)
+    print("      🚀 PROCESS MODEL PERFORMANCE")
+    print("=" * 40)
 
     print(f"\nAccuracy: {accuracy_score(y_test, y_pred):.4f}")
 
@@ -135,19 +143,23 @@ def train_process_model():
 
     # ---------------- FEATURE IMPORTANCE ----------------
     importances = pd.Series(model.feature_importances_, index=features)
-    print("\nTop Features:")
+
+    print("\n🔍 Top Features:")
     print(importances.sort_values(ascending=False))
 
-    # ---------------- SAVE ----------------
+    # ---------------- SAVE MODEL + FEATURES ----------------
+    print("\n💾 Saving model...")
+
     with open(MODEL_SAVE_PATH, 'wb') as f:
         pickle.dump({
-            'model': model,
-            'features': features
+            "model": model,
+            "features": features
         }, f)
 
-    print(f"\n✅ Model saved at: {MODEL_SAVE_PATH}")
+    print(f"✅ Model saved at: {MODEL_SAVE_PATH}")
 
 
 # ---------------- ENTRY ----------------
 if __name__ == "__main__":
     train_process_model()
+    
