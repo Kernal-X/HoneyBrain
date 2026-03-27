@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """
 Main Entry Point
 Agentic Security System
@@ -32,7 +31,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-=======
 from agents.system_agent import SystemAgent
 
 def run():
@@ -41,4 +39,3 @@ def run():
 
 if __name__ == "__main__":
     run()
->>>>>>> cb645a8f52bb31144c71a23275e733ff461db612
