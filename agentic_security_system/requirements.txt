@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Project Dependencies
 # Agentic Security System
 
@@ -19,3 +20,23 @@ pytest-cov>=2.12.0
 
 # Utilities
 python-dotenv>=0.19.0
+=======
+openai
+groq
+langchain
+langgraph
+pydantic
+numpy 
+pandas
+python-dotenv
+langchain_groq
+watchdog
+psutil
+scikit-learn
+xgboost
+matplotlib
+seaborn
+imbalanced-learn
+joblib
+numpy
+>>>>>>> cb645a8f52bb31144c71a23275e733ff461db612
