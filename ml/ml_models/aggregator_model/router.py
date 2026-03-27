@@ -4,7 +4,7 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from ml.ml_models.network_model.feature_engineering import create_features
+from ml_models.network_model.feature_engineering import create_features
 
 
 class ModelRouter:

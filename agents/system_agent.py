@@ -8,7 +8,7 @@ from logs.logger import SOCLogger
 
 class SystemAgent:
     def __init__(self):
-        self.monitor = Monitor(interval=1.0)
+        self.monitor = Monitor(interval=1)
         self.detector = ScoringDetector(alert_threshold=4, suspicious_threshold=3)
         self.event_filter = EventFilter()
         self.logger = SOCLogger(rate_limit_seconds=30)

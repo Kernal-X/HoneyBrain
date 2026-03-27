@@ -1,5 +1,5 @@
 import time
-from ml.ml_models.aggregator_model.router import ModelRouter
+from ml_models.aggregator_model.router import ModelRouter
 
 
 def main():
