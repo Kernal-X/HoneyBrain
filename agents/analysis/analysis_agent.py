@@ -1,6 +1,6 @@
 from .formatter import format_events
 from .prompt_builder import build_prompt
-from .parser import parse_response
+from .parser import parse_response,normalize_output
 from .validator import sanitize_output
 from utils.llm_client import call_llm
 
@@ -17,7 +17,9 @@ def analysis_agent(state):
 
     parsed = parse_response(raw_output)
 
-    cleaned = sanitize_output(parsed)
+    normalized = normalize_output(parsed)
+
+    cleaned = sanitize_output(normalized)
 
     state["analysis"] = cleaned
 
