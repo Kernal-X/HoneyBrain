@@ -48,6 +48,7 @@ class DeploymentManager:
                 "file_type": file.get("file_type", "txt"),
                 "schema": file.get("columns", []),
                 "realism": file.get("realism", "medium"),
+                "use_llm_realism": file.get("realism", "medium") == "high",
                 "sensitivity": self._infer_sensitivity(path)
             }
 
