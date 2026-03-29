@@ -1,0 +1,32 @@
+{
+    "/shared/finance/payroll_march.csv": [
+        "employee_name",
+        "account_no",
+        "salary",
+        "department"
+    ],
+    "/shared/admin/backup_credentials.txt": [
+        "username",
+        "password",
+        "role"
+    ],
+    "/shared/logs/security_audit.log": [
+        "timestamp",
+        "level",
+        "message"
+    ],
+    "/shared/operations/vendor_notes.txt": [
+        "vendor_name",
+        "account_no",
+        "bank_name",
+        "ifsc_code",
+        "payment_status"
+    ],
+    "/shared/hr/employee_archive.json": [
+        "employee_id",
+        "name",
+        "department",
+        "salary",
+        "email"
+    ]
+}

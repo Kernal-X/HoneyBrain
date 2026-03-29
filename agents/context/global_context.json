@@ -1,0 +1,33 @@
+{
+    "employee_names": [
+        "Aarav Singh",
+        "Neha Verma",
+        "Rohan Mehta",
+        "Priya Shah",
+        "Karan Joshi",
+        "Ananya Rao",
+        "Rahul Kapoor",
+        "Ishita Malhotra"
+    ],
+    "departments": [
+        "Finance",
+        "HR",
+        "Engineering",
+        "Operations",
+        "Admin",
+        "Security",
+        "Compliance"
+    ],
+    "email_domains": [
+        "corp.local",
+        "internal.corp",
+        "mail.corp.local"
+    ],
+    "project_names": [
+        "Orion",
+        "Atlas",
+        "Helios",
+        "Nimbus",
+        "Phoenix"
+    ]
+}
