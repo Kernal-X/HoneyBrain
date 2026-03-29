@@ -1,0 +1,81 @@
+{
+    "/shared/admin/backup_credentials.txt": {
+        "content": {
+            "content": "priya.shah : FinOps@972 (user)\nrohan.mehta : Admin@322 (admin)\nananya.rao : Backup@872 (analyst)",
+            "schema": [
+                "username",
+                "password",
+                "role"
+            ],
+            "metadata": {
+                "file_type": "txt",
+                "content_type": "credentials",
+                "size": "small",
+                "realism_level": "medium",
+                "use_llm_realism": false
+            }
+        }
+    },
+    "/shared/logs/security_audit.log": {
+        "content": {
+            "content": "[2025-10-05 01:36:28] [ERROR] User=neha.verma Event=backup completed Project=Nimbus\n[2025-11-19 10:22:28] [ERROR] User=rohan.mehta Event=finance report downloaded Project=Orion\n[2025-12-05 15:45:28] [WARN] User=aarav.singh Event=login success Project=Helios Session=2172\n[2026-01-12 04:34:28] [INFO] User=neha.verma Event=archive sync initiated | backup completed Project=Helios\n[2026-03-10 20:03:28] [DEBUG] User=rohan.mehta Event=login success Project=Phoenix\n[2025-10-30 17:15:28] [DEBUG] User=priya.shah Event=privileged export triggered | credential validation passed Project=Helios\n[2025-12-29 16:24:28] [INFO] User=ananya.rao Event=login success Project=Phoenix\n[2025-10-21 18:08:28] [INFO] User=aarav.singh Event=backup completed Project=Orion Session=3736\n[2025-12-06 04:33:28] [INFO] User=priya.shah Event=login success Project=Atlas",
+            "schema": [
+                "timestamp",
+                "level",
+                "message"
+            ],
+            "metadata": {
+                "file_type": "log",
+                "content_type": "logs",
+                "size": "medium",
+                "realism_level": "high",
+                "use_llm_realism": false
+            }
+        }
+    },
+    "/shared/operations/vendor_notes.txt": {
+        "content": {
+            "content": "Do not share contractor list outside internal mail. Do not circulate outside department.\nEscalate budget variance issue to Neha Verma. Waiting for approval from operations.\nBackup credentials rotated last cycle. Confirm access with admin team.\nQuarterly review pending for project Nimbus.",
+            "schema": [
+                "vendor_name",
+                "account_no",
+                "bank_name",
+                "ifsc_code",
+                "payment_status"
+            ],
+            "metadata": {
+                "file_type": "txt",
+                "content_type": "internal_note",
+                "size": "small",
+                "realism_level": "high",
+                "use_llm_realism": false
+            }
+        }
+    },
+    "/shared/hr/employee_archive.json": {
+        "content": {
+            "content": "[\n    {\n        \"employee_id\": \"E100\",\n        \"name\": \"Aarav Singh\",\n        \"department\": \"HR\",\n        \"salary\": 92927,\n        \"email\": \"aarav.singh@internal.corp\"\n    },\n    {\n        \"employee_id\": \"E101\",\n        \"name\": \"Ishita Malhotra\",\n        \"department\": \"Operations\",\n        \"salary\": 102465,\n        \"email\": \"ishita.malhotra@corp.local\"\n    },\n    {\n        \"employee_id\": \"E102\",\n        \"name\": \"Rohan Mehta\",\n        \"department\": \"HR\",\n        \"salary\": 78136,\n        \"email\": \"rohan.mehta@internal.corp\"\n    },\n    {\n        \"employee_id\": \"E103\",\n        \"name\": \"Neha Verma\",\n        \"department\": \"Finance\",\n        \"salary\": 58047,\n        \"email\": \"neha.verma@mail.corp.local\"\n    },\n    {\n        \"employee_id\": \"E104\",\n        \"name\": \"Karan Joshi\",\n        \"department\": \"Compliance\",\n        \"salary\": 63157,\n        \"email\": \"karan.joshi@corp.local\"\n    },\n    {\n        \"employee_id\": \"E105\",\n        \"name\": \"Neha Verma\",\n        \"department\": \"HR\",\n        \"salary\": 71806,\n        \"email\": \"neha.verma@mail.corp.local\"\n    },\n    {\n        \"employee_id\": \"E106\",\n        \"name\": \"Aarav Singh\",\n        \"department\": \"HR\",\n        \"salary\": 114972,\n        \"email\": \"aarav.singh@corp.local\"\n    },\n    {\n        \"employee_id\": \"E107\",\n        \"name\": \"Ishita Malhotra\",\n        \"department\": \"Security\",\n        \"salary\": 60466,\n        \"email\": \"ishita.malhotra@internal.corp\"\n    }\n]",
+            "schema": [
+                "employee_id",
+                "name",
+                "department",
+                "salary",
+                "email"
+            ],
+            "metadata": {
+                "file_type": "json",
+                "content_type": "employee_data",
+                "size": "medium",
+                "realism_level": "medium",
+                "use_llm_realism": false,
+                "columns": [
+                    "employee_id",
+                    "name",
+                    "department",
+                    "email",
+                    "role"
+                ]
+            }
+        }
+    }
+}
