@@ -1,0 +1,15 @@
+{
+  "content": "priya.shah : Admin@683 (analyst)\nkaran.joshi : Backup@928 (svc_backup)\nishita.malhotra : Admin@141 (user)\nrohan.mehta : Backup@440 (svc_backup)  # Marked for payroll review in next cycle\nrahul.kapoor : Access@334 (finance_admin)",
+  "schema": [
+    "username",
+    "password",
+    "role"
+  ],
+  "metadata": {
+    "file_type": "txt",
+    "content_type": "credentials",
+    "size": "small",
+    "realism_level": "medium",
+    "use_llm_realism": true
+  }
+}

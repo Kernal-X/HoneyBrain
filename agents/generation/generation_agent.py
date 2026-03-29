@@ -1,11 +1,11 @@
 import os
 
-from generation.cache import get_file, set_file
-from generation.schema_resolver import resolve
-from generation.data_generator import generate as generate_base_data
-from generation.consistency_engine import apply as apply_consistency
-from generation.realism_enhancer import apply as apply_realism
-from generation.validators import validate
+from .cache import get_file, set_file
+from .schema_resolver import resolve
+from .data_generator import generate as generate_base_data
+from .consistency_engine import apply as apply_consistency
+from .realism_enhancer import apply as apply_realism
+from .validators import validate
 
 
 class GenerationAgent:
@@ -56,11 +56,14 @@ class GenerationAgent:
                     "content": cached.get("content", ""),
                     "source": "cache",
                     "schema": cached.get("schema", []),
-                    "reason": "Returned cached fake artifact"
+                    "reason": "Returned cached fake artifact",
+                    "llm_used": cached.get("metadata", {}).get("use_llm_realism", False)
                 }
 
             # 2. Resolve schema
             schema = resolve(path, metadata)
+
+            used_llm_realism = metadata.get("realism_level", "").lower() == "high" and metadata.get("use_llm_realism", False)
 
             # 3. Generate base structured content
             content = generate_base_data(path, metadata, schema)
@@ -117,7 +120,8 @@ class GenerationAgent:
                 "content": content,
                 "source": "generated",
                 "schema": schema,
-                "reason": "Generated new fake artifact successfully"
+                "reason": "Generated new fake artifact successfully",
+                "llm_used": used_llm_realism
             }
 
         except Exception as e:
@@ -179,8 +183,26 @@ class GenerationAgent:
         elif file_type == "txt":
             if content_type == "credentials":
                 return "admin.user : Secure@123 (admin)\nbackup.user : Backup@456 (svc_backup)"
+
             elif content_type == "logs":
                 return "[2026-03-10 09:15:11] [INFO] User=admin.user Event=archive sync completed"
+
+            elif content_type == "env":
+                return (
+                    "APP_ENV=production\n"
+                    "APP_NAME=internal_service\n"
+                    "DB_HOST=10.10.12.8\n"
+                    "DB_PORT=5432\n"
+                    "DB_NAME=internal_db\n"
+                    "DB_USER=svc_backup\n"
+                    "DB_PASSWORD=Secure@123\n"
+                    "JWT_SECRET=jwt_182739_internal\n"
+                    "API_KEY=sk_live_88281928\n"
+                    "AWS_ACCESS_KEY_ID=AKIA882819201928\n"
+                    "SERVICE_OWNER=admin.user\n"
+                    "DEBUG=false"
+                )
+
             else:
                 return f"{filename} contains internal operational notes.\nDo not distribute outside authorized teams."
 
