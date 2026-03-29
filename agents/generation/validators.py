@@ -50,6 +50,28 @@ def validate_csv(content, schema):
     return True, "CSV valid"
 
 
+def validate_env(content):
+    """
+    Validate .env / config-style file.
+    Expected pattern: KEY=VALUE
+    """
+    if not is_non_empty(content):
+        return False, ".env content is empty"
+
+    lines = [line.strip() for line in content.strip().split("\n") if line.strip()]
+    if len(lines) == 0:
+        return False, ".env file has no usable lines"
+
+    valid_count = 0
+    for line in lines:
+        if "=" in line and not line.startswith("#"):
+            valid_count += 1
+
+    if valid_count < 3:
+        return False, ".env file does not resemble a real config file"
+
+    return True, ".env valid"
+
 # -----------------------------------
 # JSON VALIDATION
 # -----------------------------------
@@ -212,6 +234,8 @@ def validate(content, metadata, schema=None):
             valid, reason = validate_credentials(content)
         elif content_type == "logs":
             valid, reason = validate_logs(content)
+        elif content_type == "env":
+            valid, reason = validate_env(content)
         else:
             valid, reason = validate_text(content)
 

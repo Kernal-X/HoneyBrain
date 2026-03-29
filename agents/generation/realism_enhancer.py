@@ -1,5 +1,7 @@
 import random
 import json
+import re
+from utils.llm_client import call_llm
 
 # -----------------------------------
 # LIGHTWEIGHT REALISM TEMPLATES
@@ -55,7 +57,7 @@ def inject_typo(text):
 
     for word in words:
         key = word.lower().strip(".,")
-        if key in TYPO_VARIANTS and random.random() < 0.15:
+        if key in TYPO_VARIANTS and random.random() < 0.12:
             replacement = random.choice(TYPO_VARIANTS[key])
             if word[0].isupper():
                 replacement = replacement.capitalize()
@@ -70,39 +72,64 @@ def maybe_append_remark(line):
     """
     Add optional realistic note/comment at end of a line.
     """
-    if random.random() < 0.35:
+    if random.random() < 0.25:
         return line + "  # " + random.choice(REALISTIC_REMARKS)
     return line
 
 
+def strip_llm_artifacts(text: str) -> str:
+    """
+    Remove reasoning / markdown / formatting junk from LLM output.
+    """
+    if not text:
+        return text
+
+    # Remove <think>...</think>
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+    # Remove markdown fences
+    text = re.sub(r"```[a-zA-Z]*", "", text)
+    text = text.replace("```", "")
+
+    return text.strip()
+
+
 # -----------------------------------
-# CSV REALISM
+# CSV REALISM (SAFE)
 # -----------------------------------
 
-def enhance_csv(content, metadata):
+def enhance_csv(content):
     """
-    Add realistic columns / comments where useful without breaking structure.
+    Keep CSV realism safe.
+    Do NOT add/remove columns.
+    Only lightly normalize spacing if needed.
     """
     lines = content.strip().split("\n")
-    if len(lines) < 2:
-        return content
+    cleaned = []
 
-    headers = lines[0].split(",")
-    rows = [line.split(",") for line in lines[1:]]
+    for line in lines:
+        parts = [p.strip() for p in line.split(",")]
+        cleaned.append(",".join(parts))
 
-    # Optional remarks column
-    if metadata.get("realism_level", "medium") == "high":
-        if "remarks" not in [h.lower() for h in headers]:
-            headers.append("remarks")
+    return "\n".join(cleaned)
 
-            for row in rows:
-                row.append(random.choice(REALISTIC_REMARKS))
 
-    updated_lines = [",".join(headers)]
-    for row in rows:
-        updated_lines.append(",".join(row))
+# -----------------------------------
+# ENV REALISM (SAFE)
+# -----------------------------------
 
-    return "\n".join(updated_lines)
+def enhance_env(content):
+    """
+    Preserve exact .env structure.
+    Do NOT add/remove keys here.
+    """
+    lines = content.strip().split("\n")
+    cleaned = []
+
+    for line in lines:
+        cleaned.append(line.strip())
+
+    return "\n".join(cleaned)
 
 
 # -----------------------------------
@@ -140,10 +167,10 @@ def enhance_text(content):
     updated = []
 
     for line in lines:
-        if random.random() < 0.5:
+        if random.random() < 0.45:
             line += " " + random.choice(REALISTIC_NOTE_SUFFIXES)
 
-        if random.random() < 0.2:
+        if random.random() < 0.15:
             line = inject_typo(line)
 
         updated.append(line)
@@ -163,7 +190,7 @@ def enhance_credentials(content):
     updated = []
 
     for line in lines:
-        if random.random() < 0.25:
+        if random.random() < 0.2:
             line = maybe_append_remark(line)
         updated.append(line)
 
@@ -171,28 +198,17 @@ def enhance_credentials(content):
 
 
 # -----------------------------------
-# JSON REALISM
+# JSON REALISM (SAFE)
 # -----------------------------------
 
-def enhance_json(content, metadata):
+def enhance_json(content):
     """
-    Add optional natural-text fields to JSON structures.
+    Preserve JSON schema strictly.
+    No extra keys added.
     """
     try:
         data = json.loads(content)
-        if not isinstance(data, list):
-            return content
-
-        for item in data:
-            if not isinstance(item, dict):
-                continue
-
-            if metadata.get("realism_level", "medium") == "high":
-                if "remarks" not in item:
-                    item["remarks"] = random.choice(REALISTIC_REMARKS)
-
         return json.dumps(data, indent=4)
-
     except:
         return content
 
@@ -203,17 +219,48 @@ def enhance_json(content, metadata):
 
 def enhance_with_llm(content, metadata):
     """
-    Placeholder for future LLM-based realism enhancement.
-
-    Intended use:
-    - polishing internal notes
-    - making audit comments more natural
-    - improving memo-style documents
-
-    IMPORTANT:
-    This should never break schema or structure.
+    LLM should only POLISH realism.
+    It should NOT change the structure drastically.
+    Only use for semi-unstructured text-like files.
     """
-    return content
+    file_type = metadata.get("file_type", "").lower()
+    content_type = metadata.get("content_type", "").lower()
+
+    # SAFETY: do not use LLM on fragile structured files
+    if file_type in ["csv", "json", "env"]:
+        return content
+
+    if file_type == "txt" and content_type == "env":
+        return content
+
+    prompt = f"""
+You are improving the realism of a deceptive enterprise artifact for a cybersecurity honeypot.
+
+File type: {file_type}
+Content type: {content_type}
+
+Important constraints:
+- Preserve exact file structure
+- Do NOT remove keys, rows, or fields
+- Do NOT add new fields or records
+- Do NOT change file format
+- Do NOT explain
+- Do NOT add markdown
+- Do NOT include <think> or reasoning
+- Return ONLY the improved file content
+
+Original content:
+----------------
+{content}
+----------------
+"""
+
+    improved = call_llm(prompt, temperature=0.2, max_tokens=1200,mode="generation")
+
+    if not improved:
+        return content
+
+    return improved.strip()
 
 
 # -----------------------------------
@@ -231,16 +278,18 @@ def apply(content, metadata):
 
     # Step 1: Lightweight deterministic realism
     if file_type == "csv":
-        content = enhance_csv(content, metadata)
+        content = enhance_csv(content)
 
     elif file_type == "json":
-        content = enhance_json(content, metadata)
+        content = enhance_json(content)
 
     elif file_type == "txt":
         if content_type == "credentials":
             content = enhance_credentials(content)
         elif content_type == "logs":
             content = enhance_logs(content)
+        elif content_type == "env":
+            content = enhance_env(content)
         else:
             content = enhance_text(content)
 
@@ -250,7 +299,7 @@ def apply(content, metadata):
     else:
         content = enhance_text(content)
 
-    # Step 2: Optional LLM realism (only if explicitly high)
+    # Step 2: Optional LLM realism (ONLY for safe text-like artifacts)
     if realism_level == "high" and metadata.get("use_llm_realism", False):
         content = enhance_with_llm(content, metadata)
 
