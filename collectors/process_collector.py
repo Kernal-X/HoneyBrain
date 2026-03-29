@@ -46,6 +46,12 @@ class ProcessCollector:
                 memory_info = info.get("memory_info")
                 memory_mb = (memory_info.rss / (1024 * 1024)) if memory_info else 0.0
 
+                exe_path: Optional[str] = None
+                try:
+                    exe_path = proc.exe()
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    exe_path = None
+
                 event = {
                     "type": "process_start" if pid not in self._seen_pids else "process_sample",
                     "timestamp": now,
@@ -57,6 +63,7 @@ class ProcessCollector:
                         "cmdline": cmdline,
                         "cpu_percent": proc.cpu_percent(interval=None),
                         "memory_mb": round(memory_mb, 2),
+                        "exe_path": exe_path,
                         "user": info.get("username") or "unknown",
                         "is_known": False,
                     },
