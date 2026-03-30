@@ -71,7 +71,9 @@ class InterceptionLayer:
         if not self.generation_agent:
             return "[ERROR] No generation agent available"
 
-        return self.generation_agent.generate(path, metadata, deployment)
+        result=self.generation_agent.generate(path, metadata)
+
+        return result['content']
 
     def _read_real(self, path, reason=None):
         if reason:
