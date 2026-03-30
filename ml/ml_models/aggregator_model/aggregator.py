@@ -56,6 +56,7 @@ class StreamingAggregator:
             "alert": False
         }
 
+
     # -------- Score update --------
     def update_score(self, risk_score):
         """
