@@ -1,6 +1,6 @@
 # core/context_builder.py
 
-def build_interception_input(event, aggregated_state, analysis_output, deployment_state):
+def build_interception_input(event, analysis_output, deployment_state):
 
     return {
         "path": event["data"].get("path"),
@@ -8,10 +8,10 @@ def build_interception_input(event, aggregated_state, analysis_output, deploymen
         "process": event["data"].get("process"),
         "timestamp": event.get("timestamp"),
 
-        "aggregated_state": {
-            "risk_score": aggregated_state.get("risk_score", 0.0),
+        "analysis": {
             "attack_stage": analysis_output.get("attack_stage", "unknown"),
-            "intent": analysis_output.get("intent", "unknown")
+            "intent": analysis_output.get("intent", "unknown"),
+            "confidence": analysis_output.get("confidence", 0.0)
         },
 
         "deployment": deployment_state
