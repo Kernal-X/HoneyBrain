@@ -21,7 +21,7 @@ def fallback_response():
     """
 
 
-def clean_llm_output(text: str) -> str:
+def clean_llm_output(text: str | None) -> str:
     if not text:
         return ""
 
