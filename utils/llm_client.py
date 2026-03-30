@@ -1,8 +1,10 @@
-from groq import Groq
 import os
+
+from dotenv import load_dotenv
+from groq import Groq
+from openai import OpenAI
 import json
 import re
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -86,6 +88,34 @@ def call_llm(prompt, temperature=0.2, max_tokens=1200, mode="generation"):
         return fallback_response()
 
 
+def call_openai_strategy_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
+    """
+    OpenAI call for Strategy Agent — strict JSON object responses.
+    Raises on missing key or API errors (caller handles fallback).
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set")
+
+    client = OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": "You emit only one JSON object per request. No markdown, no explanations.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.15,
+        max_tokens=4096,
+    )
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("empty OpenAI response")
+    return content
+    
 def call_llm_json(prompt, temperature=0.1, max_tokens=800, mode="analysis"):
     raw = call_llm(prompt, temperature=temperature, max_tokens=max_tokens, mode=mode)
 

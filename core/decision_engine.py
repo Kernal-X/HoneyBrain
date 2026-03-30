@@ -1,9 +1,10 @@
 # core/decision_engine.py
 
-def decide_action(path, metadata, rules, state, supported_types):
+def decide_action(path, metadata, rules, analysis, supported_types):
 
-    risk_score = state.get("risk_score", 0.0)
-    intent = state.get("intent", "unknown")
+    intent = analysis.get("intent", "unknown")
+    stage = analysis.get("attack_stage", "unknown")
+    confidence = analysis.get("confidence", 0.0)
 
     file_type = metadata.get("file_type", "txt")
 
@@ -12,16 +13,33 @@ def decide_action(path, metadata, rules, state, supported_types):
         return "real"
 
     rule = rules.get(path, {})
-    threshold = rule.get("risk_threshold", 0.7)
     mode = rule.get("deception_mode", "partial")
 
-    if risk_score < 0.3:
+    # ------------------------
+    # LOW CONFIDENCE → SAFE
+    # ------------------------
+    if confidence < 0.4:
         return "real"
 
-    if risk_score < threshold:
-        return "partial" if mode == "partial" else "real"
+    # ------------------------
+    # MEDIUM CONFIDENCE
+    # ------------------------
+    if 0.4 <= confidence < 0.7:
+        if mode == "partial":
+            return "partial"
+        return "real"
 
-    if intent in ["data_exfiltration", "reconnaissance"]:
-        return "fake"
+    # ------------------------
+    # HIGH CONFIDENCE
+    # ------------------------
+    if confidence >= 0.7:
 
-    return "fake" if mode == "full" else "real"
+        if intent in ["data_exfiltration", "reconnaissance"]:
+            return "fake"
+
+        if stage in ["discovery", "lateral_movement", "exfiltration"]:
+            return "fake"
+
+        return "fake" if mode == "full" else "partial"
+
+    return "real"
