@@ -1,0 +1,16 @@
+{
+  "content": "Quarterly review pending for project Helios.\nPayroll review flagged 2 pending approvals from Finance.\nEscalate budget variance issue to Ishita Malhotra.\nBackup credentials rotated last cycle. Confirm access with admin team. Waiting for approval from operations.",
+  "schema": [
+    "vendor_name",
+    "account_no",
+    "bank_name",
+    "payment_status"
+  ],
+  "metadata": {
+    "file_type": "txt",
+    "content_type": "internal_note",
+    "size": "small",
+    "realism_level": "high",
+    "use_llm_realism": true
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "content": "[\n    {\n        \"employee_id\": \"E100\",\n        \"name\": \"Rohan Mehta\",\n        \"department\": \"Engineering\",\n        \"email\": \"rohan.mehta@mail.corp.local\",\n        \"role\": \"user\"\n    },\n    {\n        \"employee_id\": \"E101\",\n        \"name\": \"Ananya Rao\",\n        \"department\": \"Admin\",\n        \"email\": \"ananya.rao@internal.corp\",\n        \"role\": \"admin\"\n    },\n    {\n        \"employee_id\": \"E102\",\n        \"name\": \"Priya Shah\",\n        \"department\": \"Admin\",\n        \"email\": \"priya.shah@mail.corp.local\",\n        \"role\": \"analyst\"\n    },\n    {\n        \"employee_id\": \"E103\",\n        \"name\": \"Rahul Kapoor\",\n        \"department\": \"Security\",\n        \"email\": \"rahul.kapoor@mail.corp.local\",\n        \"role\": \"finance_admin\"\n    },\n    {\n        \"employee_id\": \"E104\",\n        \"name\": \"Ishita Malhotra\",\n        \"department\": \"Security\",\n        \"email\": \"ishita.malhotra@corp.local\",\n        \"role\": \"analyst\"\n    },\n    {\n        \"employee_id\": \"E105\",\n        \"name\": \"Karan Joshi\",\n        \"department\": \"Operations\",\n        \"email\": \"karan.joshi@mail.corp.local\",\n        \"role\": \"admin\"\n    }\n]",
+  "schema": [
+    "employee_id",
+    "name",
+    "department",
+    "email",
+    "role"
+  ],
+  "metadata": {
+    "file_type": "json",
+    "content_type": "employee_data",
+    "size": "medium",
+    "realism_level": "medium",
+    "use_llm_realism": true,
+    "columns": [
+      "employee_id",
+      "name",
+      "department",
+      "email",
+      "role"
+    ]
+  }
+}

@@ -1,53 +1,68 @@
 import os
 import json
+import hashlib
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-CACHE_DIR = os.path.join(BASE_DIR, "cache_store")
-FILE_CACHE_PATH = os.path.join(CACHE_DIR, "file_cache.json")
-SCHEMA_CACHE_PATH = os.path.join(CACHE_DIR, "schema_cache.json")
-
-os.makedirs(CACHE_DIR, exist_ok=True)
+CACHE_DIR = "cache/generated_files"
 
 
-def _load_json(path):
-    if not os.path.exists(path):
-        return {}
-    try:
-        with open(path, "r") as f:
-            return json.load(f)
-    except:
-        return {}
+def _ensure_cache_dir():
+    os.makedirs(CACHE_DIR, exist_ok=True)
 
 
-def _save_json(path, data):
-    with open(path, "w") as f:
-        json.dump(data, f, indent=4)
+def _path_to_cache_key(path: str) -> str:
+    return hashlib.md5(path.encode()).hexdigest()
 
 
-# ---------------- FILE CACHE ----------------
-
-def get_file(path):
-    file_cache = _load_json(FILE_CACHE_PATH)
-    return file_cache.get(path)
+def _cache_file_path(path: str) -> str:
+    key = _path_to_cache_key(path)
+    return os.path.join(CACHE_DIR, f"{key}.json")
 
 
-def set_file(path, content):
-    file_cache = _load_json(FILE_CACHE_PATH)
-    file_cache[path] = {
-        "content": content
+def set_file(path: str, data: dict):
+    """
+    Store generated fake artifact in cache.
+
+    Expected data format:
+    {
+        "content": "...",
+        "schema": [...],
+        "metadata": {...}
     }
-    _save_json(FILE_CACHE_PATH, file_cache)
+    """
+    _ensure_cache_dir()
+    cache_path = _cache_file_path(path)
+
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
 
 
-# ---------------- SCHEMA CACHE ----------------
+def get_file(path: str):
+    """
+    Retrieve cached fake artifact for a given path.
 
-def get_schema(path):
-    schema_cache = _load_json(SCHEMA_CACHE_PATH)
-    return schema_cache.get(path)
+    Returns:
+        dict or None
+    """
+    cache_path = _cache_file_path(path)
+
+    if not os.path.exists(cache_path):
+        return None
+
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 
-def set_schema(path, schema):
-    schema_cache = _load_json(SCHEMA_CACHE_PATH)
-    schema_cache[path] = schema
-    _save_json(SCHEMA_CACHE_PATH, schema_cache)
+def clear_cache():
+    """
+    Optional helper to wipe all cached generated files.
+    """
+    if not os.path.exists(CACHE_DIR):
+        return
+
+    for file_name in os.listdir(CACHE_DIR):
+        file_path = os.path.join(CACHE_DIR, file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)

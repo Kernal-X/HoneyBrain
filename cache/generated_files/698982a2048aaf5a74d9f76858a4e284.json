@@ -1,0 +1,24 @@
+{
+  "content": "employee_id,name,salary,department,email\nE100,Aarav Singh,62122,Finance,aarav.singh@internal.corp\nE101,Neha Verma,114023,Engineering,neha.verma@internal.corp\nE102,Karan Joshi,62325,Operations,karan.joshi@mail.corp.local\nE103,Ishita Malhotra,94894,Security,ishita.malhotra@corp.local\nE104,Rohan Mehta,77615,Engineering,rohan.mehta@mail.corp.local\nE105,Ananya Rao,48121,Admin,ananya.rao@internal.corp\nE106,Priya Shah,77752,Admin,priya.shah@mail.corp.local\nE107,Rahul Kapoor,108956,Security,rahul.kapoor@mail.corp.local",
+  "schema": [
+    "employee_id",
+    "name",
+    "salary",
+    "department",
+    "email"
+  ],
+  "metadata": {
+    "file_type": "csv",
+    "content_type": "salary_data",
+    "size": "medium",
+    "realism_level": "high",
+    "use_llm_realism": false,
+    "columns": [
+      "employee_id",
+      "name",
+      "salary",
+      "department",
+      "email"
+    ]
+  }
+}

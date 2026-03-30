@@ -1,4 +1,4 @@
-from generation.generation_agent import generate
+from agents.generation.generation_agent import generate
 
 
 def run_test_case(path, metadata):
@@ -46,7 +46,7 @@ if __name__ == "__main__":
             "content_type": "credentials",
             "size": "small",
             "realism_level": "medium",
-            "use_llm_realism": False
+            "use_llm_realism": True
         }
     )
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             "content_type": "logs",
             "size": "medium",
             "realism_level": "high",
-            "use_llm_realism": False
+            "use_llm_realism": True
         }
     )
 
@@ -74,10 +74,23 @@ if __name__ == "__main__":
             "content_type": "internal_note",
             "size": "small",
             "realism_level": "high",
-            "use_llm_realism": False
+            "use_llm_realism": True
         }
     )
 
+    # -----------------------------
+# TEST CASE 6: ENV File
+# -----------------------------
+    run_test_case(
+        path="/shared/config/.env",
+        metadata={
+            "file_type": "txt",
+            "content_type": "env",
+            "size": "small",
+            "realism_level": "high",
+            "use_llm_realism": True
+        }
+    )
     # -----------------------------
     # TEST CASE 5: JSON Data
     # -----------------------------
@@ -88,7 +101,7 @@ if __name__ == "__main__":
             "content_type": "employee_data",
             "size": "medium",
             "realism_level": "medium",
-            "use_llm_realism": False,
+            "use_llm_realism": True,
             "columns": ["employee_id", "name", "department", "email", "role"]
         }
     )
