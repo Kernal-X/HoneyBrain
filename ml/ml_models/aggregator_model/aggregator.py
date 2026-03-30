@@ -1,98 +1,89 @@
-import datetime
 import time
-import json
-from collections import Counter, deque
+import datetime
 
 
-class Aggregator:
+class StreamingAggregator:
 
-    def __init__(self, window_size=10):
-        self.events_buffer = deque()
-        self.window_size = window_size
+    def __init__(self, threshold=1.5, decay=0.9):
+        self.threshold = threshold
+        self.decay = decay
 
-    # -------- Add event to buffer --------
+        self.aggregator_score = 0.0
+        self.event_queue = []
+
+    # -------- Add event --------
     def add_event(self, event):
-        current_time = time.time()
+        """
+        event = {
+            "type": "network",
+            "risk_score": 0.7,
+            "data": {...}
+        }
+        """
 
-        event["ts"] = current_time
-        self.events_buffer.append(event)
+        # Add timestamp
+        event["timestamp"] = time.time()
 
-        # remove old events
-        while self.events_buffer and (current_time - self.events_buffer[0]["ts"] > self.window_size):
-            self.events_buffer.popleft()
+        # Store event
+        self.event_queue.append(event)
 
-    # -------- Build state from buffer --------
-    def build_state_from_buffer(self):
-        events = list(self.events_buffer)
+        # Update score
+        self.update_score(event["risk_score"])
 
-        if not events:
-            return None
-
-        return self.build_state(events)
-
-    # -------- Base risk --------
-    def base_risk(self, events):
-        scores = [e["risk_score"] for e in events]
-        return max(scores)
-
-    # -------- Multi-model boost --------
-    def multi_model_boost(self, events):
-        types = set(e["type"] for e in events)
-        return 0.1 * len(types)
-
-    # -------- Frequency boost --------
-    def frequency_boost(self, events):
-        count = len(events)
-
-        if count > 5:
-            return 0.2
-        elif count > 3:
-            return 0.1
-        else:
-            return 0.0
-
-    # -------- Diversity boost --------
-    def diversity_boost(self, events):
-        types = [e["type"] for e in events]
-        freq = Counter(types)
-
-        if any(v >= 3 for v in freq.values()):
-            return 0.15
-
-        return 0.0
-
-    # -------- Final risk --------
-    def compute_final_risk(self, events):
-
-        base = self.base_risk(events)
-        multi = self.multi_model_boost(events)
-        freq = self.frequency_boost(events)
-        diversity = self.diversity_boost(events)
-
-        final = base + multi + freq + diversity
-
-        return min(final, 1.0)
-
-    # -------- Severity --------
-    def get_severity(self, score):
-        if score >= 0.8:
-            return "high"
-        elif score >= 0.5:
-            return "medium"
-        else:
-            return "low"
-
-    # -------- Build final state --------
-    def build_state(self, events):
-
-        final_risk = self.compute_final_risk(events)
-        severity = self.get_severity(final_risk)
-
+        # Build current state
         state = {
             "timestamp": datetime.datetime.now().isoformat(),
-            "risk_score": round(final_risk, 3),
-            "severity": severity,
-            "events": events
+            "current_score": round(self.aggregator_score, 3),
+            "num_events": len(self.event_queue)
         }
 
-        return state
+        # -------- Trigger condition --------
+        if self.aggregator_score >= self.threshold:
+            output = self.build_output()
+
+            result = {
+                "state": state,
+                "alert": True,
+                "data": output
+            }
+
+            self.reset()
+            return result
+
+        # -------- No trigger --------
+        return {
+            "state": state,
+            "alert": False
+        }
+
+    # -------- Score update --------
+    def update_score(self, risk_score):
+        """
+        Decay-based accumulation:
+        new_score = decay * old_score + current_risk
+        """
+        self.aggregator_score = (
+            self.decay * self.aggregator_score + risk_score
+        )
+
+    # -------- Build final output --------
+    def build_output(self):
+
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "aggregated_risk": round(self.aggregator_score, 3),
+            "num_events": len(self.event_queue),
+            "events": [
+                {
+                    "type": e["type"],
+                    "risk_score": round(e["risk_score"], 3),
+                    "data": e["data"]
+                }
+                for e in self.event_queue
+            ]
+        }
+
+    # -------- Reset after alert --------
+    def reset(self):
+        self.aggregator_score = 0.0
+        self.event_queue = []
