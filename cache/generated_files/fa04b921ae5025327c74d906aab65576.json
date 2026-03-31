@@ -1,0 +1,28 @@
+{
+  "content": "APP_ENV=production\nAPP_NAME=nimbus-service\nDB_HOST=10.6.194.206\nDB_PORT=5432\nDB_NAME=nimbus_db\nDB_USER=svc_nimbus_backup\nDB_PASSWORD=P@ssw0rd_755\nJWT_SECRET=jwt_644327_nimbus_2024\nAPI_KEY=sk_live_51nBp65421716\nAWS_ACCESS_KEY_ID=AKIAIOSF7YGE5GEOXLP\nSERVICE_OWNER=karan.menon@company.com\nDEBUG=false",
+  "schema": [
+    "APP_ENV",
+    "APP_NAME",
+    "DB_HOST",
+    "DB_PORT",
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASSWORD",
+    "JWT_SECRET",
+    "API_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "SERVICE_OWNER",
+    "DEBUG"
+  ],
+  "metadata": {
+    "file_type": "txt",
+    "content_type": "env",
+    "size": "2kb",
+    "sensitivity": "medium",
+    "realism_level": "high",
+    "use_llm_realism": true,
+    "columns": []
+  },
+  "cached_at": "2026-03-31T08:44:13.278682+00:00",
+  "cache_version": "v2"
+}

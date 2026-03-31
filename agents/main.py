@@ -27,7 +27,6 @@ def run_test_case(path, metadata):
 
 
 if __name__ == "__main__":
-    clear_cache()
     # TEST CASE 1: Payroll CSV
     """run_test_case(
         path="/shared/finance/payroll_march.csv",
