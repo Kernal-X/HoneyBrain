@@ -40,7 +40,7 @@ class DeploymentManager:
             # ------------------------
             # FIX 1: Correct path key
             # ------------------------
-            path = file.get("path") or file.get("absolute_path")
+            path = file.get("absolute_path")
 
             if not path:
                 print("[WARNING] Missing path, skipping file")
@@ -80,13 +80,18 @@ class DeploymentManager:
 
             def map_size(bytes_val):
                 if not bytes_val:
-                    return "medium"
+                    return "250KB"
+
                 if bytes_val < 1024:
-                    return "small"
+                    return "1KB"
                 elif bytes_val < 10 * 1024:
-                    return "medium"
+                    return "50KB"
+                elif bytes_val < 100 * 1024:
+                    return "250KB"
+                elif bytes_val < 1024 * 1024:
+                    return "1MB"
                 else:
-                    return "large"
+                    return "2MB"
             content_type = file.get("content_profile", "generic")
 
             metadata = {

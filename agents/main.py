@@ -1,6 +1,9 @@
+import sys
+import os
 
-from .generation.generation_agent import generate
-from .generation.cache import clear_cache
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from agents.generation.generation_agent import generate
+from agents.generation.cache import clear_cache
 
 
 
@@ -75,7 +78,7 @@ if __name__ == "__main__":
             "use_llm_realism": True,
             "columns": []
         }
-    )"""
+    )
 
     # TEST CASE 5: ENV File
     run_test_case(
@@ -91,7 +94,7 @@ if __name__ == "__main__":
     )
 
     # TEST CASE 6: JSON Data
-    """run_test_case(
+    run_test_case(
         path="/shared/hr/employee_archive.json",
         metadata={
             "file_type": "json",
@@ -101,7 +104,7 @@ if __name__ == "__main__":
             "use_llm_realism": True,
             "columns": []
         }
-    )
+    )"""
 
     # TEST CASE 7: SQL Dump
     run_test_case(
@@ -114,4 +117,4 @@ if __name__ == "__main__":
             "use_llm_realism": False,
             "columns": []
         }
-    )"""
+    )

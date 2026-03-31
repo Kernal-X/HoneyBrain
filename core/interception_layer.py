@@ -6,7 +6,7 @@ class InterceptionLayer:
 
     def __init__(self, generation_agent=None):
         self.generation_agent = generation_agent
-        self.SUPPORTED_TYPES = ["csv", "txt", "log", "json", "env"]
+        self.SUPPORTED_TYPES = ["csv", "txt", "log", "json", "env","sql"]
 
     # ------------------------
     # MAIN ENTRY
@@ -46,6 +46,7 @@ class InterceptionLayer:
             analysis,
             self.SUPPORTED_TYPES
         )
+        print("DECISION:", action)
 
         # ------------------------
         # 4️⃣ Execute action
@@ -71,7 +72,10 @@ class InterceptionLayer:
         if not self.generation_agent:
             return "[ERROR] No generation agent available"
 
+        # print("DEBUG METADATA:", metadata)
+
         result=self.generation_agent.generate(path, metadata)
+        # print("DEBUG GENERATED:", result)
 
         return result['content']
 
