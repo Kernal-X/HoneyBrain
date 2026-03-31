@@ -14,7 +14,7 @@ class DeploymentManager:
         self.global_context = {}
         self.interception_rules = {}
 
-    def deploy(self, strategy_output):
+    def deploy(self, strategy_output, materialize_files: bool = True):
         """
         Main entry point
         """
@@ -28,6 +28,10 @@ class DeploymentManager:
             self.registry.get_all()
         )
 
+        if materialize_files:
+            for path, metadata in self.registry.get_all().items():
+                self._materialize_file(path, metadata)
+
         return self.get_state()
 
     # ------------------------
@@ -36,7 +40,7 @@ class DeploymentManager:
 
     def _build_registry(self, strategy_output):
 
-        SUPPORTED_TYPES = ["csv", "txt", "log", "json", "env"]
+        SUPPORTED_TYPES = ["csv", "txt", "log", "json", "env","sql"]
 
         files = strategy_output.get("execution_plan", {}).get("files_to_create", [])
 
