@@ -1,8 +1,10 @@
 # agents/deployment/deployment_agent.py
+import os
 
 from agents.deployment.decoy_registry import DecoyRegistry
 from agents.deployment.context_builder import build_global_context
 from agents.deployment.rule_engine import build_interception_rules
+from core.path_resolver import resolve_path
 
 
 class DeploymentManager:
@@ -112,6 +114,48 @@ class DeploymentManager:
             }
 
             self.registry.add(path, metadata)
+
+    def _materialize_file(self, path, metadata):
+        try:
+            real_path = resolve_path(path)
+
+            os.makedirs(os.path.dirname(real_path), exist_ok=True)
+
+            # DO NOT overwrite real files blindly
+            if os.path.exists(real_path):
+                return
+
+            content = self._generate_placeholder(metadata)
+
+            with open(real_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+        except Exception as e:
+            print(f"[DEPLOYMENT ERROR] {path}: {e}")
+
+    def _generate_placeholder(self, metadata):
+        ft = metadata["file_type"]
+        ct = metadata["content_type"]
+
+        if ft == "csv":
+            cols = metadata.get("columns") or ["id", "name", "value"]
+            return ",".join(cols) + "\n"
+
+        if ft == "log":
+            return "[INIT] System log initialized...\n"
+
+        if ft == "txt":
+            if ct == "credentials":
+                return "admin: ********\nuser: ********\n"
+            return "Internal document\n"
+
+        if ft == "json":
+            return "{}"
+
+        if ft == "env":
+            return "ENV=production\n"
+
+        return "placeholder"
 
     def _infer_sensitivity(self, path, content_type):
         path = (path or "").lower()

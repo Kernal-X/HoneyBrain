@@ -1,6 +1,8 @@
 # core/interception_layer.py
 
 from core.decision_engine import decide_action
+from core.path_resolver import normalize_path, resolve_path
+import os
 
 class InterceptionLayer:
 
@@ -14,7 +16,8 @@ class InterceptionLayer:
 
     def handle(self, input_data):
 
-        path = input_data.get("path")
+        original_path = input_data.get("path")
+        path = normalize_path(original_path)
         analysis = input_data.get("analysis", {})
         deployment = input_data.get("deployment", {})
 
@@ -25,7 +28,7 @@ class InterceptionLayer:
         # 1️⃣ If no decoy → real
         # ------------------------
         if path not in registry:
-            return self._read_real(path, reason="no_decoy")
+            return self._read_real(original_path, reason="no_decoy")
 
         metadata = registry[path]
         file_type = metadata.get("file_type", "txt")
@@ -52,17 +55,17 @@ class InterceptionLayer:
         # 4️⃣ Execute action
         # ------------------------
         if action == "real":
-            return self._read_real(path, reason="decision_real")
+            return self._read_real(original_path, reason="decision_real")
 
         if action == "partial":
-            real = self._read_real(path)
+            real = self._read_real(original_path)
             fake = self._generate_fake(path, metadata, deployment,analysis)
             return self._blend(real, fake)
 
         if action == "fake":
             return self._generate_fake(path, metadata, deployment,analysis)
 
-        return self._read_real(path, reason="fallback")
+        return self._read_real(original_path, reason="fallback")
 
     # ------------------------
     # HELPERS
@@ -72,22 +75,30 @@ class InterceptionLayer:
         if not self.generation_agent:
             return "[ERROR] No generation agent available"
 
-        # print("DEBUG METADATA:", metadata)
-        print("METADATA SENT TO GENERATOR:", metadata)
         enriched_metadata = {
             **metadata,
             "analysis": analysis   # 🔥 inject here
         }
+        # 🔥 THIS is where decoy path is used
+        decoy_path = resolve_path(path)
 
-        result=self.generation_agent.generate(path, enriched_metadata)
-        # print("DEBUG GENERATED:", result)
+        result=self.generation_agent.generate(decoy_path, enriched_metadata)
 
         return result['content']
 
     def _read_real(self, path, reason=None):
+        real_path = path
+
+        if not os.path.exists(real_path):
+            return f"[REAL:missing] {path}"
+
+        with open(real_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
         if reason:
-            return f"[REAL:{reason}] {path}"
-        return f"[REAL] {path}"
+            return f"[REAL:{reason}]\n{content}"
+
+        return content
 
     def _blend(self, real, fake):
         return f"{real}\n---PARTIAL-DECEPTION---\n{fake}"

@@ -8,6 +8,7 @@ from .data_generator import generate as generate_base_data
 from .consistency_engine import apply as apply_consistency
 from .realism_enhancer import apply as apply_realism
 from .validators import validate, validate_metadata
+from core.path_resolver import resolve_path
 
 
 class GenerationAgent:
@@ -119,8 +120,24 @@ class GenerationAgent:
             # 4. Apply consistency
             content = apply_consistency(content, metadata)
 
+            # 🔥 Prevent LLM token overflow for logs
+            if metadata.get("file_type") == "log":
+                content = self._truncate_logs(content)
+
             # 5. Apply realism enhancement
             content = apply_realism(content, metadata)
+
+            # 🔥 Persist generated content into decoy filesystem
+            try:
+                real_path = resolve_path(path)
+
+                os.makedirs(os.path.dirname(real_path), exist_ok=True)
+
+                with open(real_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+            except Exception as e:
+                print("[WRITE ERROR]", e)
 
             # 6. Validate final output
             is_valid, reason = validate(content, metadata, schema)
@@ -171,6 +188,17 @@ class GenerationAgent:
                 "reason": f"GenerationAgent exception: {str(e)}",
                 "llm_used": False
             }
+
+    def _truncate_logs(self, content):
+        """
+        Prevent oversized logs from breaking LLM calls
+        """
+        lines = content.split("\n")
+
+        if len(lines) > 200:
+            return "\n".join(lines[:120] + ["...truncated..."] + lines[-30:])
+
+        return content
 
     # -----------------------------------
     # FALLBACK GENERATION
