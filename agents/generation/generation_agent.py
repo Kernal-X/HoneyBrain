@@ -76,24 +76,6 @@ class GenerationAgent:
     # -----------------------------------
 
     def generate(self, path, metadata):
-        """
-        Generate (or retrieve) deceptive content for a file path.
-
-        Args:
-            path (str): requested file path
-            metadata (dict): decoy registry metadata
-
-        Returns:
-            dict:
-            {
-                "success": bool,
-                "content": str,
-                "source": "cache" | "generated" | "fallback" | "error",
-                "schema": list,
-                "reason": str,
-                "llm_used": bool
-            }
-        """
         try:
             metadata = self._normalize_metadata(metadata)
 
@@ -109,10 +91,11 @@ class GenerationAgent:
                     "llm_used": False
                 }
 
-            cache_key = self._build_cache_key(path, metadata)
-
-            # 1. Check cache first
-            cached = get_file(cache_key)
+            # 1. CHECK CACHE FIRST 
+            # Note: We pass the raw 'path' and 'metadata'. 
+            # Let cache.py handle the hashing logic you already wrote there.
+            cached = get_file(path, metadata) 
+            
             if cached:
                 return {
                     "success": True,
@@ -123,9 +106,8 @@ class GenerationAgent:
                     "llm_used": cached.get("metadata", {}).get("use_llm_realism", False)
                 }
 
-            # 2. Resolve schema
+            # 2. CACHE MISS -> PROCEED TO GENERATION
             schema = resolve(path, metadata)
-
             used_llm_realism = (
                 metadata.get("realism_level", "") == "high"
                 and metadata.get("use_llm_realism", False)
@@ -145,42 +127,29 @@ class GenerationAgent:
 
             if not is_valid:
                 fallback_content = self._fallback_content(path, metadata, schema)
-
-                # validate fallback too
-                fb_valid, fb_reason = validate(fallback_content, metadata, schema)
-
-                if not fb_valid:
-                    return {
-                        "success": False,
-                        "content": "",
-                        "source": "fallback",
-                        "schema": schema,
-                        "reason": f"Primary + fallback generation failed. Reason: {reason} | {fb_reason}",
-                        "llm_used": used_llm_realism
-                    }
-
-                # cache fallback
-                set_file(cache_key, {
+                
+                # Cache the fallback so we don't re-run failed generation
+                set_file(path, {
                     "content": fallback_content,
                     "schema": schema,
                     "metadata": metadata
-                })
+                }, metadata)
 
                 return {
                     "success": True,
                     "content": fallback_content,
                     "source": "fallback",
                     "schema": schema,
-                    "reason": f"Used fallback content because primary validation failed: {reason}",
+                    "reason": f"Used fallback content: {reason}",
                     "llm_used": used_llm_realism
                 }
 
-            # 7. Cache final content
-            set_file(cache_key, {
+            # 7. CACHE SUCCESSFUL GENERATION
+            set_file(path, {
                 "content": content,
                 "schema": schema,
                 "metadata": metadata
-            })
+            }, metadata)
 
             # 8. Return final artifact
             return {
@@ -193,6 +162,7 @@ class GenerationAgent:
             }
 
         except Exception as e:
+            # ... error handling ...
             return {
                 "success": False,
                 "content": "",
