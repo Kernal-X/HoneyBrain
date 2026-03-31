@@ -29,30 +29,30 @@ def run_test_case(path, metadata):
 if __name__ == "__main__":
     clear_cache()
     # TEST CASE 1: Payroll CSV
-    """run_test_case(
-        path="/shared/finance/payroll_march.csv",
-        metadata={
-            "file_type": "csv",
-            "content_type": "salary_data",
-            "size": "15kb",
-            "realism_level": "high",
-            "use_llm_realism": False,
-            "columns": []
-        }
-    )
+    # run_test_case(
+    #     path="/shared/finance/payroll_march.csv",
+    #     metadata={
+    #         "file_type": "csv",
+    #         "content_type": "salary_data",
+    #         "size": "15kb",
+    #         "realism_level": "high",
+    #         "use_llm_realism": False,
+    #         "columns": []
+    #     }
+    # )
 
-    # TEST CASE 2: Credentials TXT
-    run_test_case(
-        path="/shared/admin/backup_credentials.txt",
-        metadata={
-            "file_type": "txt",
-            "content_type": "credentials",
-            "size": "5kb",
-            "realism_level": "medium",
-            "use_llm_realism": True,
-            "columns": []
-        }
-    )
+    # # TEST CASE 2: Credentials TXT
+    # run_test_case(
+    #     path="/shared/admin/backup_credentials.txt",
+    #     metadata={
+    #         "file_type": "txt",
+    #         "content_type": "credentials",
+    #         "size": "5kb",
+    #         "realism_level": "medium",
+    #         "use_llm_realism": True,
+    #         "columns": []
+    #     }
+    # )
 
     # TEST CASE 3: Logs
     run_test_case(
@@ -67,54 +67,54 @@ if __name__ == "__main__":
         }
     )
 
-    # TEST CASE 4: Internal Note
-    run_test_case(
-        path="/shared/operations/vendor_notes.txt",
-        metadata={
-            "file_type": "txt",
-            "content_type": "internal_note",
-            "size": "3kb",
-            "realism_level": "high",
-            "use_llm_realism": True,
-            "columns": []
-        }
-    )
+    # # TEST CASE 4: Internal Note
+    # run_test_case(
+    #     path="/shared/operations/vendor_notes.txt",
+    #     metadata={
+    #         "file_type": "txt",
+    #         "content_type": "internal_note",
+    #         "size": "3kb",
+    #         "realism_level": "high",
+    #         "use_llm_realism": True,
+    #         "columns": []
+    #     }
+    # )
 
-    # TEST CASE 5: ENV File
-    run_test_case(
-        path="/shared/config/.env",
-        metadata={
-            "file_type": "txt",
-            "content_type": "env",
-            "size": "2kb",
-            "realism_level": "high",
-            "use_llm_realism": True,
-            "columns": []
-        }
-    )
+    # # TEST CASE 5: ENV File
+    # run_test_case(
+    #     path="/shared/config/.env",
+    #     metadata={
+    #         "file_type": "txt",
+    #         "content_type": "env",
+    #         "size": "2kb",
+    #         "realism_level": "high",
+    #         "use_llm_realism": True,
+    #         "columns": []
+    #     }
+    # )
 
-    # TEST CASE 6: JSON Data
-    run_test_case(
-        path="/shared/hr/employee_archive.json",
-        metadata={
-            "file_type": "json",
-            "content_type": "employee_data",
-            "size": "20kb",
-            "realism_level": "medium",
-            "use_llm_realism": True,
-            "columns": []
-        }
-    )"""
+    # # TEST CASE 6: JSON Data
+    # run_test_case(
+    #     path="/shared/hr/employee_archive.json",
+    #     metadata={
+    #         "file_type": "json",
+    #         "content_type": "employee_data",
+    #         "size": "20kb",
+    #         "realism_level": "medium",
+    #         "use_llm_realism": True,
+    #         "columns": []
+    #     }
+    # )
 
     # TEST CASE 7: SQL Dump
-    run_test_case(
-        path="/shared/db/payroll_backup.sql",
-        metadata={
-            "file_type": "sql",
-            "content_type": "payroll_db",
-            "size": "40kb",
-            "realism_level": "high",
-            "use_llm_realism": False,
-            "columns": []
-        }
-    )
+    # run_test_case(
+    #     path="/shared/db/payroll_backup.sql",
+    #     metadata={
+    #         "file_type": "sql",
+    #         "content_type": "payroll_db",
+    #         "size": "40kb",
+    #         "realism_level": "high",
+    #         "use_llm_realism": False,
+    #         "columns": []
+    #     }
+    # )

@@ -56,11 +56,11 @@ class InterceptionLayer:
 
         if action == "partial":
             real = self._read_real(path)
-            fake = self._generate_fake(path, metadata, deployment)
+            fake = self._generate_fake(path, metadata, deployment,analysis)
             return self._blend(real, fake)
 
         if action == "fake":
-            return self._generate_fake(path, metadata, deployment)
+            return self._generate_fake(path, metadata, deployment,analysis)
 
         return self._read_real(path, reason="fallback")
 
@@ -68,13 +68,18 @@ class InterceptionLayer:
     # HELPERS
     # ------------------------
 
-    def _generate_fake(self, path, metadata, deployment):
+    def _generate_fake(self, path, metadata, deployment,analysis):
         if not self.generation_agent:
             return "[ERROR] No generation agent available"
 
         # print("DEBUG METADATA:", metadata)
+        print("METADATA SENT TO GENERATOR:", metadata)
+        enriched_metadata = {
+            **metadata,
+            "analysis": analysis   # 🔥 inject here
+        }
 
-        result=self.generation_agent.generate(path, metadata)
+        result=self.generation_agent.generate(path, enriched_metadata)
         # print("DEBUG GENERATED:", result)
 
         return result['content']
