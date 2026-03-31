@@ -1,14 +1,10 @@
 import os
-<<<<<<< HEAD
 
-from dotenv import load_dotenv
 from groq import Groq
 from openai import OpenAI
-=======
+from dotenv import load_dotenv
 import json
 import re
-from dotenv import load_dotenv
->>>>>>> f24415d6a447837f15bfa28a3bace8d3639b4b0a
 
 load_dotenv()
 
@@ -91,8 +87,6 @@ def call_llm(prompt, temperature=0.2, max_tokens=1200, mode="generation"):
         print("Groq Error:", e)
         return fallback_response()
 
-
-<<<<<<< HEAD
 def call_openai_strategy_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
     """
     OpenAI call for Strategy Agent — strict JSON object responses.
@@ -120,7 +114,7 @@ def call_openai_strategy_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
     if not content:
         raise RuntimeError("empty OpenAI response")
     return content
-=======
+    
 def call_llm_json(prompt, temperature=0.1, max_tokens=800, mode="analysis"):
     raw = call_llm(prompt, temperature=temperature, max_tokens=max_tokens, mode=mode)
 
@@ -129,4 +123,3 @@ def call_llm_json(prompt, temperature=0.1, max_tokens=800, mode="analysis"):
     except Exception:
         print("⚠️ Failed to parse LLM JSON response")
         return {}
->>>>>>> f24415d6a447837f15bfa28a3bace8d3639b4b0a
