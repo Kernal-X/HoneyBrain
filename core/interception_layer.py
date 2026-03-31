@@ -9,6 +9,79 @@ class InterceptionLayer:
     def __init__(self, generation_agent=None):
         self.generation_agent = generation_agent
         self.SUPPORTED_TYPES = ["csv", "txt", "log", "json", "env","sql"]
+        self._allowed_real_roots = self._build_allowed_real_roots()
+
+    def _build_allowed_real_roots(self):
+        roots = []
+
+        # Default: keep real reads scoped to project-controlled roots.
+        for rel in ("shared", "demo_shared"):
+            try:
+                roots.append(os.path.abspath(os.path.join(os.getcwd(), rel)))
+            except Exception:
+                continue
+
+        # Optional extra roots (semicolon-separated on Windows).
+        extra = os.environ.get("REAL_READ_ROOTS")
+        if extra:
+            for part in extra.split(";"):
+                part = part.strip()
+                if not part:
+                    continue
+                try:
+                    roots.append(os.path.abspath(part))
+                except Exception:
+                    continue
+
+        normed = []
+        seen = set()
+        for r in roots:
+            rr = os.path.normcase(os.path.abspath(r))
+            if rr in seen:
+                continue
+            seen.add(rr)
+            normed.append(rr)
+        return normed
+
+    def _is_within_allowed_root(self, candidate_path: str) -> bool:
+        try:
+            cp = os.path.normcase(os.path.abspath(candidate_path))
+        except Exception:
+            return False
+        for root in self._allowed_real_roots:
+            try:
+                if cp == root or cp.startswith(root + os.sep):
+                    return True
+            except Exception:
+                continue
+        return False
+
+    def _resolve_real_read_path(self, original_path: str):
+        """
+        Resolve a "real" file path safely.
+
+        - If a virtual path like /shared/... is provided, map it into ./shared/...
+        - If an OS path is provided, only allow reading if it is within approved roots.
+        """
+        if not original_path or not isinstance(original_path, str):
+            return None
+
+        p = original_path.strip()
+        if not p:
+            return None
+
+        if p.startswith("/"):
+            parts = [x for x in p.split("/") if x]
+            if parts and parts[0].lower() in {"shared", "demo_shared"}:
+                mapped = os.path.abspath(os.path.join(os.getcwd(), *parts))
+                return mapped if self._is_within_allowed_root(mapped) else None
+            return None
+
+        try:
+            abs_p = os.path.abspath(p)
+        except Exception:
+            return None
+        return abs_p if self._is_within_allowed_root(abs_p) else None
 
     # ------------------------
     # MAIN ENTRY
@@ -57,11 +130,6 @@ class InterceptionLayer:
         if action == "real":
             return self._read_real(original_path, reason="decision_real")
 
-        if action == "partial":
-            real = self._read_real(original_path)
-            fake = self._generate_fake(path, metadata, deployment,analysis)
-            return self._blend(real, fake)
-
         if action == "fake":
             return self._generate_fake(path, metadata, deployment,analysis)
 
@@ -77,14 +145,21 @@ class InterceptionLayer:
 
         enriched_metadata = {
             **metadata,
-            "analysis": analysis   # 🔥 inject here
+            "analysis": analysis   # inject here
         }
         result=self.generation_agent.generate(path, enriched_metadata)
 
         return result['content']
 
     def _read_real(self, path, reason=None):
-        real_path = path
+        resolved = self._resolve_real_read_path(path)
+        if not resolved:
+            blocked_msg = f"[REAL:blocked_outside_allowed_root] {path}"
+            if reason:
+                return f"[REAL:{reason}]\n{blocked_msg}"
+            return blocked_msg
+
+        real_path = resolved
 
         if not os.path.exists(real_path):
             return f"[REAL:missing] {path}"
@@ -106,5 +181,4 @@ class InterceptionLayer:
 
         return content
 
-    def _blend(self, real, fake):
-        return f"{real}\n---PARTIAL-DECEPTION---\n{fake}"
+    # Partial deception intentionally removed: only REAL or FAKE responses are supported.
