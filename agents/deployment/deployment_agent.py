@@ -4,7 +4,7 @@ import os
 from agents.deployment.decoy_registry import DecoyRegistry
 from agents.deployment.context_builder import build_global_context
 from agents.deployment.rule_engine import build_interception_rules
-from core.path_resolver import resolve_path
+from core.path_resolver import normalize_path, resolve_path
 
 
 class DeploymentManager:
@@ -18,6 +18,9 @@ class DeploymentManager:
         """
         Main entry point
         """
+        self.registry = DecoyRegistry()
+        self.global_context = {}
+        self.interception_rules = {}
 
         self._build_registry(strategy_output)
         self.global_context = build_global_context()
@@ -42,11 +45,13 @@ class DeploymentManager:
             # ------------------------
             # FIX 1: Correct path key
             # ------------------------
-            path = file.get("absolute_path")
+            path = file.get("absolute_path") or file.get("path")
 
             if not path:
                 print("[WARNING] Missing path, skipping file")
                 continue
+
+            path = normalize_path(path)
 
             # ------------------------
             # FIX 2: Extract file type properly
@@ -106,10 +111,11 @@ class DeploymentManager:
                 "content_type": content_type,
 
                 # consistent naming
+                "realism": realism,
                 "realism_level": realism,
                 "use_llm_realism": realism == "high",
                 "size":map_size(size_bytes),
-                # "sensitivity": self._infer_sensitivity(path, content_type)
+                "sensitivity": self._infer_sensitivity(path, content_type)
                 
             }
 
@@ -170,7 +176,7 @@ class DeploymentManager:
         if content_type in ["logs", "internal_note"]:
             return "medium"
 
-        return "low"
+        return "medium"
 
     # ------------------------
     # PUBLIC API

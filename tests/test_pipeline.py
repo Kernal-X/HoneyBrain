@@ -55,18 +55,18 @@ def get_mock_analysis(intent, stage, confidence):
 
 def run_test():
 
-    print("\n🚀 Running PRE-GENERATION PIPELINE\n")
+    print("\nRunning PRE-GENERATION PIPELINE\n")
 
-    # 1️⃣ Deployment
+    # 1. Deployment
     deployment_manager = DeploymentManager()
     strategy_output = get_mock_strategy_output()
     deployment_state = deployment_manager.deploy(strategy_output)
 
-    # 2️⃣ Interception + Generation
+    # 2. Interception + Generation
     generation_agent = GenerationAgent()
     interception = InterceptionLayer(generation_agent=generation_agent)
 
-    # 🔥 Force execution immediately
+    # Force execution immediately
     analysis = get_mock_analysis("data_exfiltration", "collection", 0.9)
 
     generated_files = {}
@@ -83,13 +83,13 @@ def run_test():
 
         generated_files[path] = result
 
-    print("\n📦 DECoy REGISTRY:")
+    print("\nDECOY REGISTRY:")
     for k, v in deployment_state["decoy_registry"].items():
         print(k, "->", v["file_type"])
 
-    # 3️⃣ Print results
-    print("\n📂 GENERATED FILES:\n")
-    print("\n📁 Decoy Environment Path:")
+    # 3. Print results
+    print("\nGENERATED FILES:\n")
+    print("\nDecoy Environment Path:")
     print(os.path.abspath("./decoy_env"))
 
     for path, content in generated_files.items():

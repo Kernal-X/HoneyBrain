@@ -28,9 +28,6 @@ class StreamingAggregator:
 
         self.event_queue.append(event_copy)
 
-        # store event
-        self.event_queue.append(event)
-
         # update score
         self.update_score(event["risk_score"])
 

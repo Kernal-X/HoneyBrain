@@ -1,18 +1,14 @@
 import os
 
-from groq import Groq
 from openai import OpenAI
-<<<<<<< HEAD
 from dotenv import load_dotenv
-=======
->>>>>>> b8f564539190fb577c58cb00a11ab9e2a880afde
 import json
 import re
 
 load_dotenv()
 
-ANALYSIS_MODEL = "qwen/qwen3-32b"
-GENERATION_MODEL = "llama-3.3-70b-versatile"
+ANALYSIS_MODEL = "gpt-4o-mini"
+GENERATION_MODEL = "gpt-4o-mini"
 
 
 def fallback_response():
@@ -50,17 +46,17 @@ def clean_llm_output(text: str | None) -> str:
 
 
 def _client():
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return None
-    return Groq(api_key=api_key)
+    return OpenAI(api_key=api_key)
 
 
 def call_llm(prompt, temperature=0.2, max_tokens=1200, mode="generation"):
     client = _client()
 
     if not client:
-        print("⚠️ GROQ_API_KEY not set, using fallback")
+        print("OPENAI_API_KEY not set, using fallback")
         return fallback_response()
 
     model = GENERATION_MODEL if mode == "generation" else ANALYSIS_MODEL
@@ -87,13 +83,9 @@ def call_llm(prompt, temperature=0.2, max_tokens=1200, mode="generation"):
         return clean_llm_output(raw)
 
     except Exception as e:
-        print("Groq Error:", e)
+        print("OpenAI Error:", e)
         return fallback_response()
 
-<<<<<<< HEAD
-=======
-
->>>>>>> b8f564539190fb577c58cb00a11ab9e2a880afde
 def call_openai_strategy_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
     """
     OpenAI call for Strategy Agent — strict JSON object responses.

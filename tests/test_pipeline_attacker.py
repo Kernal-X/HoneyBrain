@@ -52,9 +52,9 @@ def get_mock_analysis(intent, stage, confidence):
 
 def simulate_attacker_access(interception, deployment_state):
 
-    print("\n🧑‍💻 Simulating Attacker Behavior\n")
+    print("\nSimulating Attacker Behavior\n")
 
-    # 👇 Simulated attacker actions (mixed paths)
+    # Simulated attacker actions (mixed paths)
     attacker_requests = [
         "D:\\shared\\logs\\security_audit.log",   # suspicious target
         "C:\\shared\\finance\\payroll_march.csv", # sensitive data
@@ -92,18 +92,18 @@ def simulate_attacker_access(interception, deployment_state):
 
 def run_test():
 
-    print("\n🚀 Running ATTACKER-SIMULATION PIPELINE\n")
+    print("\nRunning ATTACKER-SIMULATION PIPELINE\n")
 
-    # 1️⃣ Deployment (setup environment)
+    # 1. Deployment (setup environment)
     deployment_manager = DeploymentManager()
     strategy_output = get_mock_strategy_output()
     deployment_state = deployment_manager.deploy(strategy_output)
 
-    # 2️⃣ Setup interception + generation
+    # 2. Setup interception + generation
     generation_agent = GenerationAgent()
     interception = InterceptionLayer(generation_agent=generation_agent)
 
-    # 3️⃣ Simulate attacker
+    # 3. Simulate attacker
     simulate_attacker_access(interception, deployment_state)
 
 

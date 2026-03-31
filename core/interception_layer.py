@@ -79,10 +79,7 @@ class InterceptionLayer:
             **metadata,
             "analysis": analysis   # 🔥 inject here
         }
-        # 🔥 THIS is where decoy path is used
-        decoy_path = resolve_path(path)
-
-        result=self.generation_agent.generate(decoy_path, enriched_metadata)
+        result=self.generation_agent.generate(path, enriched_metadata)
 
         return result['content']
 
@@ -92,14 +89,17 @@ class InterceptionLayer:
         if not os.path.exists(real_path):
             return f"[REAL:missing] {path}"
 
+        content = None
         for enc in ["utf-8", "utf-16"]:
             try:
                 with open(real_path, "r", encoding=enc) as f:
-                    return f.read()
+                    content = f.read()
+                    break
             except:
                 continue
 
-        return f"[REAL:binary_or_unsupported] {path}"
+        if content is None:
+            return f"[REAL:binary_or_unsupported] {path}"
 
         if reason:
             return f"[REAL:{reason}]\n{content}"
