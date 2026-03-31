@@ -37,8 +37,15 @@ class LangGraphSecurityPipeline:
         enricher: EventEnricher | None = None,
         deployment_manager: DeploymentManager | None = None,
         generation_agent: GenerationAgent | None = None,
+        monitor_interval: float = 1.0,
+        file_watch_paths: List[str] | None = None,
+        file_watch_recursive: bool = True,
     ) -> None:
-        self.monitor = monitor or Monitor(interval=1)
+        self.monitor = monitor or Monitor(
+            interval=monitor_interval,
+            file_watch_paths=file_watch_paths,
+            file_watch_recursive=file_watch_recursive,
+        )
         self.detector = detector or ScoringDetector(alert_threshold=0, suspicious_threshold=0)
         self.event_filter = event_filter or EventFilter()
         self.logger = logger or SOCLogger(rate_limit_seconds=30)

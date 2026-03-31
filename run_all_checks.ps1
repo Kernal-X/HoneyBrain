@@ -108,8 +108,15 @@ function Run-PythonCode {
 
     $tempScript = Join-Path $cacheDir ("inline_" + [guid]::NewGuid().ToString() + ".py")
     try {
-        Set-Content -Path $tempScript -Value $Code -Encoding UTF8
-        return Run-PythonCommand -Arguments @($tempScript) -TimeoutSeconds $TimeoutSeconds
+        $bootstrap = @"
+import os
+import sys
+os.chdir(r'$repoRoot')
+sys.path.insert(0, r'$repoRoot')
+
+"@
+        Set-Content -Path $tempScript -Value ($bootstrap + $Code) -Encoding UTF8
+        return Run-PythonCommand -Arguments @("""$tempScript""") -TimeoutSeconds $TimeoutSeconds
     }
     finally {
         Remove-Item $tempScript -ErrorAction SilentlyContinue

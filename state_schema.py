@@ -27,3 +27,4 @@ class SecuritySystemState(TypedDict, total=False):
     interception_result: str
     errors: List[str]
     notes: List[str]
+    cycle_report: Dict[str, Any]

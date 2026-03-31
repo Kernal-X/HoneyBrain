@@ -20,7 +20,7 @@ def main():
     system_config = load_config("configs/system_config.yaml")
     print("Agentic Security System Started")
     print(f"Version: {system_config['system']['version']}")
-    agent = SystemAgent()
+    agent = SystemAgent(config=system_config)
     agent.start()
 
 
