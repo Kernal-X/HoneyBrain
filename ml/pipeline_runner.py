@@ -1,18 +1,14 @@
 import time
 
-# -------- FIX IMPORT PATH (important) --------
+# -------- FIX IMPORT PATH --------
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# -------- IMPORT YOUR COMPONENTS --------
 from ml.ml_models.aggregator_model.aggregator import StreamingAggregator
 from ml.ml_models.aggregator_model.router import ModelRouter
 
 
-# =====================================================
-# PIPELINE CLASS
-# =====================================================
 class Pipeline:
 
     def __init__(self):
@@ -25,17 +21,15 @@ class Pipeline:
 
         # -------- Step 1: Router → Model --------
         model_output = self.router.route(event)
+
         risk_score = model_output["risk_score"]
+        event_struct = model_output["event"]   # 🔥 KEY FIX
 
         print("\n📌 Event Type:", event["type"])
         print("➡ Risk Score:", round(risk_score, 4))
 
         # -------- Step 2: Aggregator --------
-        agg_result = self.aggregator.add_event({
-            "type": event["type"],
-            "risk_score": risk_score,
-            "data": event
-        })
+        agg_result = self.aggregator.add_event(event_struct)
 
         print("📊 Aggregator Output:", agg_result)
 
@@ -48,16 +42,14 @@ class Pipeline:
 
 
 # =====================================================
-# TEST PIPELINE (SIMULATION)
+# TEST PIPELINE
 # =====================================================
 if __name__ == "__main__":
 
     pipeline = Pipeline()
 
-    # -------- TEST EVENTS --------
     events = [
 
-        # Normal network
         {
             "type": "network",
             "remote_port": 80,
@@ -66,7 +58,6 @@ if __name__ == "__main__":
             "is_known_ip": 1
         },
 
-        # Suspicious network
         {
             "type": "network",
             "remote_port": 4444,
@@ -77,7 +68,6 @@ if __name__ == "__main__":
             "system_score": 3
         },
 
-        # Suspicious process
         {
             "type": "process",
             "cpu_percent": 85,
@@ -88,7 +78,6 @@ if __name__ == "__main__":
             "behavioral_anomaly_flag": 1
         },
 
-        # Suspicious file
         {
             "type": "file",
             "system_score": 3,
@@ -97,7 +86,6 @@ if __name__ == "__main__":
         }
     ]
 
-    # -------- RUN PIPELINE --------
     for event in events:
         pipeline.process_event(event)
         time.sleep(1)

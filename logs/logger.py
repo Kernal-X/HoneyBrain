@@ -1,30 +1,58 @@
-import json
+﻿import json
 import time
 from typing import Any, Dict, Optional, Tuple
 
+from ml.ml_models.aggregator_model.aggregator import StreamingAggregator
+from ml.ml_models.aggregator_model.router import ModelRouter
+
 
 class SOCLogger:
-    def __init__(self, rate_limit_seconds: int = 30):
+    def __init__(self, rate_limit_seconds: int = 30, ml_threshold: float = 1.5, ml_decay: float = 0.9):
         self.rate_limit_seconds = rate_limit_seconds
         self._last_emit_by_key = {}
+        self.router = ModelRouter()
+        self.aggregator = StreamingAggregator(threshold=ml_threshold, decay=ml_decay)
 
-    def emit(self, event: Dict, detection: Dict) -> None:
+    def emit(self, event: Dict, detection: Dict) -> Optional[Dict[str, Any]]:
         severity = detection.get("severity", "none")
         if severity not in {"alert", "suspicious"}:
-            return
+            return None
 
         raw_type = event.get("type")
         if raw_type == "file_access":
-            self._emit_file_ml(event, detection)
-            return
+            payload = self._build_file_ml_payload(event, detection)
+        elif raw_type == "network_connection":
+            payload = self._build_network_ml_payload(event, detection)
+        else:
+            payload = self._build_process_ml_payload(event, detection)
 
-        if raw_type == "network_connection":
-            self._emit_network_ml(event, detection)
-            return
+        if payload is None:
+            return None
 
-        self._emit_process_ml(event, detection)
+        output = self._run_ml(payload)
+        print(json.dumps(output))
+        return output
 
-    def _emit_process_ml(self, event: Dict, detection: Dict) -> None:
+    def _run_ml(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        model_input = dict(payload)
+        model_input["type"] = payload["event_type"]
+
+        model_output = self.router.route(model_input)
+        aggregation = self.aggregator.add_event(
+            {
+                "type": payload["event_type"],
+                "risk_score": model_output["risk_score"],
+                "data": payload,
+            }
+        )
+
+        return {
+            "log": payload,
+            "model": model_output,
+            "aggregation": aggregation,
+        }
+
+    def _build_process_ml_payload(self, event: Dict, detection: Dict) -> Optional[Dict[str, Any]]:
         data = event.get("data", {})
         ts = event.get("timestamp") or time.time()
         pid = data.get("pid")
@@ -33,7 +61,7 @@ class SOCLogger:
         key = f"process:{primary_reason}:{pid}"
 
         if not self._check_rate_limit(key):
-            return
+            return None
 
         process_name = data.get("process_name")
         process_name_str = (
@@ -65,9 +93,9 @@ class SOCLogger:
             file_action=None,
         )
         self._apply_enriched_overrides(data, payload)
-        print(json.dumps(payload))
+        return payload
 
-    def _emit_file_ml(self, event: Dict, detection: Dict) -> None:
+    def _build_file_ml_payload(self, event: Dict, detection: Dict) -> Optional[Dict[str, Any]]:
         data = event.get("data", {})
         ts = event.get("timestamp") or time.time()
         file_path = data.get("file_path")
@@ -79,7 +107,7 @@ class SOCLogger:
         key = f"file:{primary_reason}:{fp_key}:{act_key}"
 
         if not self._check_rate_limit(key):
-            return
+            return None
 
         score = int(detection.get("score", 0))
         path_str = str(file_path) if file_path is not None else None
@@ -112,9 +140,9 @@ class SOCLogger:
             file_action=str(action) if action is not None else None,
         )
         self._apply_enriched_overrides(data, payload)
-        print(json.dumps(payload))
+        return payload
 
-    def _emit_network_ml(self, event: Dict, detection: Dict) -> None:
+    def _build_network_ml_payload(self, event: Dict, detection: Dict) -> Optional[Dict[str, Any]]:
         data = event.get("data", {})
         ts = event.get("timestamp") or time.time()
         process_name = data.get("process_name")
@@ -129,7 +157,7 @@ class SOCLogger:
         key = f"network:{primary_reason}:{process_name_str}:{rip}:{remote_port}"
 
         if not self._check_rate_limit(key):
-            return
+            return None
 
         score = int(detection.get("score", 0))
         remote_ip_out: Optional[str] = rip if rip else None
@@ -158,7 +186,7 @@ class SOCLogger:
             file_action=None,
         )
         self._apply_enriched_overrides(data, payload)
-        print(json.dumps(payload))
+        return payload
 
     def _apply_enriched_overrides(self, data: Dict, payload: Dict[str, Any]) -> None:
         for key in (
@@ -291,6 +319,8 @@ class SOCLogger:
             "file_freq_1min": file_freq_1min,
             "file_rarity": 0,
         }
+        
+
 
     def _check_rate_limit(self, key: str) -> bool:
         now = time.time()

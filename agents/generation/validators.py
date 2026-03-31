@@ -1,4 +1,16 @@
 import json
+import re
+
+
+# -----------------------------------
+# SUPPORTED METADATA VALUES
+# -----------------------------------
+
+SUPPORTED_FILE_TYPES = {"csv", "json", "txt", "log", "sql", "env"}
+SUPPORTED_SENSITIVITY = {"low", "medium", "high"}
+SUPPORTED_REALISM_LEVELS = {"low", "medium", "high"}
+
+SIZE_PATTERN = re.compile(r"^\s*(\d+(\.\d+)?)\s*(KB|MB)\s*$", re.IGNORECASE)
 
 
 # -----------------------------------
@@ -17,6 +29,76 @@ def normalize_line_count(content):
     Return number of non-empty lines.
     """
     return len([line for line in content.strip().split("\n") if line.strip()])
+
+
+def normalize_metadata(metadata):
+    """
+    Normalize metadata into a consistent internal format.
+    """
+    metadata = metadata or {}
+
+    return {
+        "file_type": str(metadata.get("file_type", "")).strip().lower(),
+        "content_type": str(metadata.get("content_type", "")).strip().lower(),
+        "size": str(metadata.get("size", "")).strip(),
+        "sensitivity": str(metadata.get("sensitivity", "medium")).strip().lower(),
+        "realism_level": str(metadata.get("realism_level", "medium")).strip().lower(),
+        "use_llm_realism": bool(metadata.get("use_llm_realism", False)),
+        "columns": metadata.get("columns", [])
+    }
+
+
+# -----------------------------------
+# METADATA VALIDATION
+# -----------------------------------
+
+def validate_size_format(size_value):
+    """
+    Accepts values like:
+    - 50KB
+    - 250 KB
+    - 1MB
+    - 1.5MB
+    """
+    if not size_value:
+        return False
+
+    return bool(SIZE_PATTERN.match(size_value))
+
+
+def validate_metadata(metadata):
+    """
+    Validate request metadata before content validation.
+    Returns:
+        (is_valid: bool, reason: str)
+    """
+    metadata = normalize_metadata(metadata)
+
+    file_type = metadata["file_type"]
+    sensitivity = metadata["sensitivity"]
+    realism_level = metadata["realism_level"]
+    size = metadata["size"]
+    columns = metadata["columns"]
+
+    if not file_type:
+        return False, "Missing required metadata: file_type"
+
+    if file_type not in SUPPORTED_FILE_TYPES:
+        return False, f"Unsupported file_type: {file_type}"
+
+    if sensitivity not in SUPPORTED_SENSITIVITY:
+        return False, f"Invalid sensitivity: {sensitivity}"
+
+    if realism_level not in SUPPORTED_REALISM_LEVELS:
+        return False, f"Invalid realism_level: {realism_level}"
+
+    if size and not validate_size_format(size):
+        return False, f"Invalid size format: {size}. Expected formats like 50KB, 250KB, 1MB, 1.5MB"
+
+    if columns and not isinstance(columns, list):
+        return False, "Metadata field 'columns' must be a list"
+
+    return True, "Metadata valid"
 
 
 # -----------------------------------
@@ -50,6 +132,10 @@ def validate_csv(content, schema):
     return True, "CSV valid"
 
 
+# -----------------------------------
+# ENV / CONFIG VALIDATION
+# -----------------------------------
+
 def validate_env(content):
     """
     Validate .env / config-style file.
@@ -71,6 +157,7 @@ def validate_env(content):
         return False, ".env file does not resemble a real config file"
 
     return True, ".env valid"
+
 
 # -----------------------------------
 # JSON VALIDATION
@@ -110,6 +197,38 @@ def validate_json(content, schema):
 
 
 # -----------------------------------
+# SQL VALIDATION
+# -----------------------------------
+
+def validate_sql(content, schema):
+    """
+    Validate SQL dump / SQL-like content.
+    Accepts:
+    - CREATE TABLE ...
+    - INSERT INTO ...
+    - schema + inserts
+    """
+    if not is_non_empty(content):
+        return False, "SQL content is empty"
+
+    lowered = content.lower()
+
+    has_create = "create table" in lowered
+    has_insert = "insert into" in lowered
+
+    if not has_create and not has_insert:
+        return False, "SQL content does not resemble SQL dump or schema"
+
+    # Optional lightweight schema presence check
+    if schema:
+        found_fields = sum(1 for field in schema if field.lower() in lowered)
+        if found_fields < max(2, min(3, len(schema))):
+            return False, "SQL content does not sufficiently reflect expected schema"
+
+    return True, "SQL valid"
+
+
+# -----------------------------------
 # CREDENTIAL FILE VALIDATION
 # -----------------------------------
 
@@ -128,7 +247,7 @@ def validate_credentials(content):
 
     valid_count = 0
     for line in lines:
-        if ":" in line:
+        if ":" in line or "=" in line:
             valid_count += 1
 
     if valid_count == 0:
@@ -155,7 +274,7 @@ def validate_logs(content):
 
     signal_count = 0
     for line in lines:
-        if "Event=" in line or "[" in line or "User=" in line:
+        if "Event=" in line or "[" in line or "User=" in line or "INFO" in line or "ERROR" in line:
             signal_count += 1
 
     if signal_count == 0:
@@ -195,7 +314,12 @@ def lightweight_believability_check(content, metadata):
         return False, "Believability failed: empty content"
 
     # Avoid placeholder-heavy junk
-    bad_markers = ["field1", "field2", "field3", "value_1", "value_2"]
+    bad_markers = [
+        "field1", "field2", "field3",
+        "value_1", "value_2",
+        "example@example.com",
+        "test123"
+    ]
     bad_hits = sum(marker in content for marker in bad_markers)
 
     if bad_hits >= 3:
@@ -204,6 +328,10 @@ def lightweight_believability_check(content, metadata):
     # Avoid ultra-short fake files
     if len(content.strip()) < 15:
         return False, "Believability failed: content too short"
+
+    # SQL should not be absurdly tiny
+    if metadata.get("file_type", "").lower() == "sql" and len(content.strip()) < 40:
+        return False, "Believability failed: SQL artifact too short"
 
     return True, "Believability passed"
 
@@ -215,12 +343,20 @@ def lightweight_believability_check(content, metadata):
 def validate(content, metadata, schema=None):
     """
     Main validation entry point.
-    Chooses validation logic based on file type + content type.
+    Chooses validation logic based on metadata + file type + content type.
+
     Returns:
         (is_valid: bool, reason: str)
     """
-    file_type = metadata.get("file_type", "").lower()
-    content_type = metadata.get("content_type", "").lower()
+    metadata = normalize_metadata(metadata)
+
+    # 0. Validate metadata first
+    meta_valid, meta_reason = validate_metadata(metadata)
+    if not meta_valid:
+        return False, meta_reason
+
+    file_type = metadata.get("file_type", "")
+    content_type = metadata.get("content_type", "")
 
     # 1. File-type-specific validation
     if file_type == "csv":
@@ -228,6 +364,12 @@ def validate(content, metadata, schema=None):
 
     elif file_type == "json":
         valid, reason = validate_json(content, schema)
+
+    elif file_type == "sql":
+        valid, reason = validate_sql(content, schema)
+
+    elif file_type == "env":
+        valid, reason = validate_env(content)
 
     elif file_type == "txt":
         if content_type == "credentials":

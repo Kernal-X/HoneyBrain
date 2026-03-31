@@ -1,5 +1,5 @@
 import time
-import datetime
+import copy
 
 
 class StreamingAggregator:
@@ -21,28 +21,24 @@ class StreamingAggregator:
         }
         """
 
-        # Add timestamp
-        event["timestamp"] = time.time()
+        # add timestamp
 
-        # Store event
+        event_copy = copy.deepcopy(event)
+        event_copy["timestamp"] = time.time()
+
+        self.event_queue.append(event_copy)
+
+        # store event
         self.event_queue.append(event)
 
-        # Update score
+        # update score
         self.update_score(event["risk_score"])
-
-        # Build current state
-        state = {
-            "timestamp": datetime.datetime.now().isoformat(),
-            "current_score": round(self.aggregator_score, 3),
-            "num_events": len(self.event_queue)
-        }
 
         # -------- Trigger condition --------
         if self.aggregator_score >= self.threshold:
             output = self.build_output()
 
             result = {
-                "state": state,
                 "alert": True,
                 "data": output
             }
@@ -52,39 +48,42 @@ class StreamingAggregator:
 
         # -------- No trigger --------
         return {
-            "state": state,
-            "alert": False
+            "alert": False,
+            "state": {
+                "risk_score": round(self.aggregator_score, 3),
+                "events": self.event_queue
+            }
         }
-
 
     # -------- Score update --------
     def update_score(self, risk_score):
-        """
-        Decay-based accumulation:
-        new_score = decay * old_score + current_risk
-        """
         self.aggregator_score = (
             self.decay * self.aggregator_score + risk_score
         )
 
-    # -------- Build final output --------
+    # -------- Final Output --------
     def build_output(self):
 
+        # sort events by importance (optional but useful)
+        sorted_events = sorted(
+            self.event_queue,
+            key=lambda x: x["risk_score"],
+            reverse=True
+        )
+
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
-            "aggregated_risk": round(self.aggregator_score, 3),
-            "num_events": len(self.event_queue),
+            "risk_score": float(round(self.aggregator_score, 3)),
             "events": [
                 {
                     "type": e["type"],
-                    "risk_score": round(e["risk_score"], 3),
+                    "risk_score": float(round(e["risk_score"], 3)),
                     "data": e["data"]
                 }
-                for e in self.event_queue
+                for e in sorted_events
             ]
         }
 
-    # -------- Reset after alert --------
+    # -------- Reset --------
     def reset(self):
         self.aggregator_score = 0.0
         self.event_queue = []

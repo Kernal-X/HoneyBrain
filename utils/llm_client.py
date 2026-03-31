@@ -2,7 +2,10 @@ import os
 
 from groq import Groq
 from openai import OpenAI
+<<<<<<< HEAD
 from dotenv import load_dotenv
+=======
+>>>>>>> b8f564539190fb577c58cb00a11ab9e2a880afde
 import json
 import re
 
@@ -23,7 +26,7 @@ def fallback_response():
     """
 
 
-def clean_llm_output(text: str) -> str:
+def clean_llm_output(text: str | None) -> str:
     if not text:
         return ""
 
@@ -87,6 +90,10 @@ def call_llm(prompt, temperature=0.2, max_tokens=1200, mode="generation"):
         print("Groq Error:", e)
         return fallback_response()
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> b8f564539190fb577c58cb00a11ab9e2a880afde
 def call_openai_strategy_llm(prompt: str, model: str = "gpt-4o-mini") -> str:
     """
     OpenAI call for Strategy Agent — strict JSON object responses.
