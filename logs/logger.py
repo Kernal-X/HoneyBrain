@@ -320,8 +320,7 @@ class SOCLogger:
             "file_rarity": 0,
         }
         
-        
-        
+
 
     def _check_rate_limit(self, key: str) -> bool:
         now = time.time()
