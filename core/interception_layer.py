@@ -92,8 +92,14 @@ class InterceptionLayer:
         if not os.path.exists(real_path):
             return f"[REAL:missing] {path}"
 
-        with open(real_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        for enc in ["utf-8", "utf-16"]:
+            try:
+                with open(real_path, "r", encoding=enc) as f:
+                    return f.read()
+            except:
+                continue
+
+        return f"[REAL:binary_or_unsupported] {path}"
 
         if reason:
             return f"[REAL:{reason}]\n{content}"
