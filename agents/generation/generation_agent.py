@@ -8,7 +8,7 @@ from .data_generator import generate as generate_base_data
 from .consistency_engine import apply as apply_consistency
 from .realism_enhancer import apply as apply_realism
 from .validators import validate, validate_metadata
-print("🔥 GENERATION AGENT FILE:", __file__)
+
 
 class GenerationAgent:
     """
@@ -26,7 +26,6 @@ class GenerationAgent:
     """
 
     def __init__(self):
-    
         pass
 
     # -----------------------------------
@@ -118,13 +117,11 @@ class GenerationAgent:
             content = generate_base_data(path, metadata, schema)
 
             # 4. Apply consistency
-            print("STEP 1 BASE:", content[:200])
             content = apply_consistency(content, metadata)
 
             # 5. Apply realism enhancement
-            print("STEP 2 CONSISTENCY:", content[:200])
             content = apply_realism(content, metadata)
-            print("STEP 3 REALISM:", content[:200])
+
             # 6. Validate final output
             is_valid, reason = validate(content, metadata, schema)
 
@@ -133,23 +130,6 @@ class GenerationAgent:
                 
                 # Cache the fallback so we don't re-run failed generation
                 set_file(path, {
-
-                # validate fallback too
-                fb_valid, fb_reason = validate(fallback_content, metadata, schema)
-
-                if not fb_valid:
-                    safe_content = self._fallback_content(path, metadata, schema)
-                    return {
-                        "success": False,
-                        "content": safe_content,
-                        "source": "fallback",
-                        "schema": schema,
-                        "reason": f"Primary + fallback generation failed. Reason: {reason} | {fb_reason}",
-                        "llm_used": used_llm_realism
-                    }
-
-                # cache fallback
-                set_file(cache_key, {
                     "content": fallback_content,
                     "schema": schema,
                     "metadata": metadata
