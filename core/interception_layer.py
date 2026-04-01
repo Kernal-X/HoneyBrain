@@ -145,7 +145,7 @@ class InterceptionLayer:
 
         enriched_metadata = {
             **metadata,
-            "analysis": analysis   # inject here
+            "analysis": analysis   
         }
         result=self.generation_agent.generate(path, enriched_metadata)
 
@@ -180,5 +180,3 @@ class InterceptionLayer:
             return f"[REAL:{reason}]\n{content}"
 
         return content
-
-    # Partial deception intentionally removed: only REAL or FAKE responses are supported.
