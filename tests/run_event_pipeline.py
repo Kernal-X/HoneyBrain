@@ -62,7 +62,7 @@ def main():
     # ------------------------
     os.makedirs(DEMO_ROOT, exist_ok=True)
     collector = FileCollector(path=str(DEMO_ROOT), recursive=True)
-    print("Watching path:", collector.path)
+    print("Watching paths:", ", ".join(collector.paths))
 
     print("Watching for file events...\n")
 
